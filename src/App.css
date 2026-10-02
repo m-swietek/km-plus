@@ -95,6 +95,14 @@ button {
   margin-right: 5px;
 }
 
+.update-banner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1em;
+  margin-bottom: 1em;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;
