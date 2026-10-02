@@ -49,6 +49,8 @@ Jednoosobowy projekt desktopowy budowany po godzinach w 6 tygodni, z twardym wym
 | npm package | create-tauri-app v4.7.4 published 2026-09-04   | fresh    | resolved from cmd_template (checked although language_family is rust, since the CLI is npm-distributed) |
 | GitHub repo | not run                                        | —        | card `docs_url` is `https://tauri.app` (not GitHub); `gh` CLI also not installed |
 
+Re-checked on 2026-10-02: `create-tauri-app` is still v4.7.4 (modified 2026-09-04) — unchanged, still fresh. GitHub check still not run for the same reasons.
+
 ## Scaffold log
 
 **Resolved invocation**: `npm create tauri-app@latest .bootstrap-scaffold -- --template react-ts --manager npm --yes`
@@ -98,15 +100,35 @@ vite.config.ts
 ## Post-scaffold audit
 
 **Tool**: cargo audit
-**Status**: failed to run
-**Reason**: Rust toolchain not installed — `cargo` not found on PATH (and `cargo-audit` therefore unavailable). No `Cargo.lock` exists yet either.
-**Partial output (if any)**:
+**Summary**: 0 CRITICAL, 0 HIGH, 0 MODERATE, 0 LOW
+**Direct vs transitive**: 0/0/0/0 direct of total 0/0/0/0
 
-```
-/usr/bin/bash: line 1: cargo: command not found
-```
+Re-run on 2026-10-02 (cargo 1.99.0, cargo-audit 0.22.2, run in `src-tauri/`, exit code 0), replacing the original 2026-09-29 record in which the audit failed to run because the Rust toolchain was not installed. Scanned `Cargo.lock`: 459 crate dependencies against 1280 advisories.
 
-Supplementary note: the JS frontend (`package.json`) has no `node_modules` or lockfile yet, so `npm audit` was not run either. After installing Rust and running `npm install` + a first `cargo build`, run `cargo install cargo-audit && cargo audit` (in `src-tauri/`) and `npm audit`.
+#### CRITICAL findings
+
+None.
+
+#### HIGH findings
+
+None.
+
+#### MODERATE findings
+
+None.
+
+#### LOW / INFO findings
+
+No vulnerabilities. Two informational warnings (allowed by cargo-audit, both transitive):
+
+- `proc-macro-error` 1.0.4 — RUSTSEC-2024-0370 — unmaintained. No fix version; resolves when upstream crates drop the dependency.
+- `glib` 0.18.5 — RUSTSEC-2024-0429 — unsound: `Iterator` and `DoubleEndedIterator` impls for `glib::VariantStrIter`. Fix version not checked.
+
+Supplementary checks run the same day (not part of the `cargo audit` dispatch):
+
+- `npm audit` on the JS frontend: 0 vulnerabilities across 62 dependencies (6 prod, 57 dev, 38 optional).
+- `npx tsc --noEmit`: exit code 0.
+- `cargo check` in `src-tauri/`: exit code 0.
 
 ## Hints recorded but not acted on
 
@@ -131,7 +153,7 @@ Supplementary note: the JS frontend (`package.json`) has no `node_modules` or lo
 Next: a future skill will set up agent context (CLAUDE.md, AGENTS.md). For now, your project is scaffolded and verified — happy hacking.
 
 Useful manual steps in the meantime:
-- Install Rust via https://rustup.rs and the Tauri Windows prerequisites (https://tauri.app/start/prerequisites/), then `npm install` and `npm run tauri dev`.
-- `git init` (if you have not already) to start your own repo history.
+- Rust toolchain and dependencies are now installed (as of 2026-10-02); run `npm run tauri dev` to start the app.
+- `git init` (if you have not already) to start your own repo history — done, initial commit `1e049a8`.
 - Review any `.scaffold` siblings the conflict policy created and decide which version of each file to keep (none this run).
-- Address audit findings per your project's risk tolerance — the audit could not run this time; re-run it once the toolchain is installed.
+- Address audit findings per your project's risk tolerance — the full breakdown is in this log (no vulnerabilities; two informational warnings).
