@@ -107,6 +107,8 @@ Cofnięcie wydania do draftu lub jego usunięcie (ręcznie) zatrzymuje pobrania 
 - 2026-10-02, run 37070244284: porażka przy podpisie updatera — `incorrect updater private key password`; sekret `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` był pusty. Poprawiony ręcznie w panelu.
 - 2026-10-03, run 37141751826: sukces. Draft `app-v0.1.0` z `km-plus_0.1.0_x64-setup.exe` (2 257 905 B, SHA-256 `A74DEFFB…E300D9`, Authenticode: NotSigned), `.sig` i `latest.json`; podpis w `latest.json` zgadza się z `.sig`. URL w `latest.json` wskazuje na API (`api.github.com/.../releases/assets/<id>`), nie `browser_download_url` — do potwierdzenia w teście 0.1.0 → 0.1.1.
 - 2026-10-03: 0.1.0 opublikowane ręcznie (18:00 UTC). Anonimowo: `releases/latest/download/latest.json` → 200, wersja 0.1.0; URL instalatora z API z nagłówkiem `Accept: application/octet-stream` zwraca plik o tym samym SHA-256. Wersja podbita do 0.1.1 na potrzeby testu aktualizacji.
+- 2026-10-03, run 37142738798: sukces, draft `app-v0.1.1` (SHA-256 `3EA03214…65E488`), podpis w `latest.json` zgodny z `.sig`. Opublikowany ręcznie 18:09 UTC.
+- 2026-10-03: test aktualizacji zaliczony (potwierdzenie użytkownika): zainstalowana 0.1.0 pokazała baner i zaktualizowała się w miejscu. W rejestrze deinstalacji jeden wpis `km-plus` 0.1.1 (`%LOCALAPPDATA%\km-plus`). Publiczny `latest.json` serwuje 0.1.1; pierwsze anonimowe pobranie zaraz po publikacji zwróciło jeszcze 0.1.0 (cache przekierowania po stronie GitHub), kolejne już 0.1.1. **Wdrożenie zakończone.**
 
 ## Pliki
 - zmieniane: `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, `src-tauri/src/lib.rs`, `src-tauri/capabilities/default.json`, `package.json`, `package-lock.json`, `src/App.tsx`, `src/App.css`, `README.md`
