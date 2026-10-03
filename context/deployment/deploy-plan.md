@@ -101,6 +101,13 @@ Jedyny sposób na realne sprawdzenie updatera. Podbić wersję do 0.1.1 w `tauri
 ## Wycofanie
 Cofnięcie wydania do draftu lub jego usunięcie (ręcznie) zatrzymuje pobrania i oferty aktualizacji; kopii już zaktualizowanych nie cofa — wymaga wydania wyższej wersji ze starym kodem.
 
+## Przebieg wykonania
+
+- 2026-10-02: kroki 0–10 wykonane; commit `5f678f4` na `main`. `gh` był już zainstalowany (`C:\Program Files\GitHub CLI\`, poza PATH). `tauri add updater` dodał uprawnienie w nowym `capabilities/desktop.json` zamiast `default.json`.
+- 2026-10-02, run 37070244284: porażka przy podpisie updatera — `incorrect updater private key password`; sekret `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` był pusty. Poprawiony ręcznie w panelu.
+- 2026-10-03, run 37141751826: sukces. Draft `app-v0.1.0` z `km-plus_0.1.0_x64-setup.exe` (2 257 905 B, SHA-256 `A74DEFFB…E300D9`, Authenticode: NotSigned), `.sig` i `latest.json`; podpis w `latest.json` zgadza się z `.sig`. URL w `latest.json` wskazuje na API (`api.github.com/.../releases/assets/<id>`), nie `browser_download_url` — do potwierdzenia w teście 0.1.0 → 0.1.1.
+- 2026-10-03: 0.1.0 opublikowane ręcznie (18:00 UTC). Anonimowo: `releases/latest/download/latest.json` → 200, wersja 0.1.0; URL instalatora z API z nagłówkiem `Accept: application/octet-stream` zwraca plik o tym samym SHA-256. Wersja podbita do 0.1.1 na potrzeby testu aktualizacji.
+
 ## Pliki
 - zmieniane: `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, `src-tauri/src/lib.rs`, `src-tauri/capabilities/default.json`, `package.json`, `package-lock.json`, `src/App.tsx`, `src/App.css`, `README.md`
 - nowe: `.github/workflows/release.yml`, `context/deployment/deploy-plan.md`
