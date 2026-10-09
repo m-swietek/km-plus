@@ -412,16 +412,16 @@ Wszystkie w `cargo test` na `tempfile::TempDir`, tanie parametry KDF (poza teste
 
 #### Automated
 
-- [x] 3.1 Frontend się buduje (tsc strict + vite): `npm run build`
-- [x] 3.2 Brak pozostałości demo: `grep -rE "greet|reactLogo" src` nic nie zwraca
-- [x] 3.3 Brak podatności w zależnościach JS: `npm audit`
+- [x] 3.1 Frontend się buduje (tsc strict + vite): `npm run build` — 0304a1a
+- [x] 3.2 Brak pozostałości demo: `grep -rE "greet|reactLogo" src` nic nie zwraca — 0304a1a
+- [x] 3.3 Brak podatności w zależnościach JS: `npm audit` — 0304a1a
 
 #### Manual
 
-- [x] 3.4 `npm run tauri dev` na czystym katalogu danych: ekran ustawienia hasła; za krótkie lub niezgodne hasła blokują przycisk; po ustawieniu widać powłokę „kmPlus / Brak wpisów”
-- [x] 3.5 Ponowne uruchomienie: ekran odblokowania; błędne hasło → „Nieprawidłowe hasło” i wyczyszczone pole; poprawne → powłoka; okno nie zamarza podczas odblokowywania
-- [x] 3.6 Scenariusz uszkodzenia: po zamknięciu aplikacji skopiować `kmplus.vault` na `kmplus.vault.bak`, zmienić jeden bajt w `kmplus.vault`; przy starcie i poprawnym haśle pojawia się komunikat z datą kopii; „Przywróć kopię” odblokowuje, w katalogu jest `kmplus.vault.damaged-<…>`
-- [x] 3.7 Scenariusz braku pliku: przenieść `kmplus.vault` poza katalog (zostawić `.bak`); start pokazuje przywracanie kopii, nie ustawianie hasła
+- [x] 3.4 `npm run tauri dev` na czystym katalogu danych: ekran ustawienia hasła; za krótkie lub niezgodne hasła blokują przycisk; po ustawieniu widać powłokę „kmPlus / Brak wpisów” — 0304a1a
+- [x] 3.5 Ponowne uruchomienie: ekran odblokowania; błędne hasło → „Nieprawidłowe hasło” i wyczyszczone pole; poprawne → powłoka; okno nie zamarza podczas odblokowywania — 0304a1a
+- [x] 3.6 Scenariusz uszkodzenia: po zamknięciu aplikacji skopiować `kmplus.vault` na `kmplus.vault.bak`, zmienić jeden bajt w `kmplus.vault`; przy starcie i poprawnym haśle pojawia się komunikat z datą kopii; „Przywróć kopię” odblokowuje, w katalogu jest `kmplus.vault.damaged-<…>` — 0304a1a
+- [x] 3.7 Scenariusz braku pliku: przenieść `kmplus.vault` poza katalog (zostawić `.bak`); start pokazuje przywracanie kopii, nie ustawianie hasła — 0304a1a
 
 ### Phase 4: Wydanie i dowód aktualizacji
 
