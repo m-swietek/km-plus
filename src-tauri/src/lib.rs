@@ -1,3 +1,8 @@
+// Phase 2 of `password-unlocked-vault` wires the vault into Tauri commands;
+// until then its API is unused outside tests.
+#[allow(dead_code)]
+mod vault;
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {

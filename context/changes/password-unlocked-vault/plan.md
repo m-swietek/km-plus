@@ -388,13 +388,13 @@ Wszystkie w `cargo test` na `tempfile::TempDir`, tanie parametry KDF (poza teste
 
 #### Automated
 
-- [ ] 1.1 Testy sejfu przechodzą: `cargo test vault` w `src-tauri/`
-- [ ] 1.2 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/`
-- [ ] 1.3 Brak znanych podatności w nowych zależnościach: `cargo audit` w `src-tauri/`
+- [x] 1.1 Testy sejfu przechodzą: `cargo test vault` w `src-tauri/`
+- [x] 1.2 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/`
+- [x] 1.3 Brak znanych podatności w nowych zależnościach: `cargo audit` w `src-tauri/`
 
 #### Manual
 
-- [ ] 1.4 Przegląd listy testów potwierdza pokrycie każdego punktu z Testing Strategy → Unit Tests
+- [x] 1.4 Przegląd listy testów potwierdza pokrycie każdego punktu z Testing Strategy → Unit Tests
 
 ### Phase 2: Komendy Tauri i stan sesji
 

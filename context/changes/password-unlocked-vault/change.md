@@ -1,7 +1,7 @@
 ---
 change_id: password-unlocked-vault
 title: Hasło odblokowuje zaszyfrowane dane (roadmapa S-01)
-status: planned
+status: implementing
 created: 2026-10-09
 updated: 2026-10-09
 archived_at: null
