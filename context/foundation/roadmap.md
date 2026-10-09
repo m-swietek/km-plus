@@ -3,7 +3,7 @@ project: kmPlus
 version: 1
 status: draft                    # draft | active | locked
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-09
 prd_version: 4
 main_goal: quality
 top_blocker: skills
@@ -41,7 +41,7 @@ Kierowca auta z instalacją gazową nie zna realnego spalania — komputer pokł
 
 | ID   | Change ID                   | Outcome (user can …)                                                                 | Prerequisites | PRD refs                      | Status   |
 | ---- | --------------------------- | ------------------------------------------------------------------------------------ | ------------- | ----------------------------- | -------- |
-| S-01 | password-unlocked-vault     | ustawić hasło przy pierwszym uruchomieniu i odblokowywać nim zaszyfrowane dane        | —             | FR-001                        | ready    |
+| S-01 | password-unlocked-vault     | ustawić hasło przy pierwszym uruchomieniu i odblokowywać nim zaszyfrowane dane        | —             | FR-001                        | planning |
 | S-02 | first-fillup-consumption    | podać punkt startowy, dodać tankowanie i od razu zobaczyć spalanie tego paliwa i koszt | S-01          | US-01, FR-002, FR-003, FR-007 | proposed |
 | S-03 | fillup-history-both-fuels   | przeglądać historię tankowań i bieżące spalanie osobno dla gazu i benzyny             | S-02          | US-01, FR-007                 | proposed |
 | S-04 | correct-or-delete-fillup    | poprawić lub usunąć wpis tankowania i zobaczyć przeliczone spalanie                   | S-03          | US-01, FR-004, FR-005         | proposed |
@@ -90,7 +90,7 @@ Brak osobnych fundamentów w tym kamieniu milowym. Jedyne brakujące warstwy (da
   - Jak wyprowadzić klucz z hasła i szyfrować dane w spoczynku tak, by błędne hasło dawało jednoznaczny komunikat, a nigdy nie uszkadzało danych? — Owner: user (badanie w `/10x-plan`). Block: no.
   - Jak chronić jedyną kopię historii, gdy nowa wersja aplikacji zmienia strukturę danych (np. zaszyfrowana kopia przed zmianą)? — Owner: user. Block: no.
 - **Risk:** Musi być pierwsze, bo każdy kolejny kawałek zapisuje dane, a szyfrowanie dołożone później wymagałoby konwersji jedynej kopii historii; to też miejsce głównego ryzyka (umiejętności — kryptografia w Ruście).
-- **Status:** ready
+- **Status:** planning
 
 ### S-02: Pierwsze tankowanie daje spalanie
 
