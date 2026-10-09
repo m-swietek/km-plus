@@ -10,6 +10,7 @@
 //! - `kmplus.vault.damaged-<unix s>` — damaged main file set aside on restore
 //!   (never deleted by the app)
 
+pub mod commands;
 mod data;
 mod format;
 #[cfg(test)]

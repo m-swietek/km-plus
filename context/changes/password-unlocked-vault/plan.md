@@ -388,25 +388,25 @@ Wszystkie w `cargo test` na `tempfile::TempDir`, tanie parametry KDF (poza teste
 
 #### Automated
 
-- [x] 1.1 Testy sejfu przechodzą: `cargo test vault` w `src-tauri/`
-- [x] 1.2 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/`
-- [x] 1.3 Brak znanych podatności w nowych zależnościach: `cargo audit` w `src-tauri/`
+- [x] 1.1 Testy sejfu przechodzą: `cargo test vault` w `src-tauri/` — ebab2cf
+- [x] 1.2 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/` — ebab2cf
+- [x] 1.3 Brak znanych podatności w nowych zależnościach: `cargo audit` w `src-tauri/` — ebab2cf
 
 #### Manual
 
-- [x] 1.4 Przegląd listy testów potwierdza pokrycie każdego punktu z Testing Strategy → Unit Tests
+- [x] 1.4 Przegląd listy testów potwierdza pokrycie każdego punktu z Testing Strategy → Unit Tests — ebab2cf
 
 ### Phase 2: Komendy Tauri i stan sesji
 
 #### Automated
 
-- [ ] 2.1 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/`
-- [ ] 2.2 Testy nadal przechodzą: `cargo test` w `src-tauri/`
-- [ ] 2.3 `greet` nie występuje już w backendzie: `grep -r greet src-tauri/src` nic nie zwraca
+- [x] 2.1 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/`
+- [x] 2.2 Testy nadal przechodzą: `cargo test` w `src-tauri/`
+- [x] 2.3 `greet` nie występuje już w backendzie: `grep -r greet src-tauri/src` nic nie zwraca
 
 #### Manual
 
-- [ ] 2.4 `docs/reference/contract-surfaces.md` wymienia wszystkie cztery komendy, nazwy plików sejfu i wersje formatu
+- [x] 2.4 `docs/reference/contract-surfaces.md` wymienia wszystkie cztery komendy, nazwy plików sejfu i wersje formatu
 
 ### Phase 3: Bramka w UI i pusta powłoka
 

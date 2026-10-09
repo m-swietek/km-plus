@@ -1,20 +1,21 @@
-// Phase 2 of `password-unlocked-vault` wires the vault into Tauri commands;
-// until then its API is unused outside tests.
-#[allow(dead_code)]
 mod vault;
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
+use vault::commands::{
+    vault_restore_backup, vault_setup, vault_status, vault_unlock, VaultSession,
+};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .manage(VaultSession::default())
+        .invoke_handler(tauri::generate_handler![
+            vault_status,
+            vault_setup,
+            vault_unlock,
+            vault_restore_backup
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
