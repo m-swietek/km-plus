@@ -400,28 +400,28 @@ Wszystkie w `cargo test` na `tempfile::TempDir`, tanie parametry KDF (poza teste
 
 #### Automated
 
-- [x] 2.1 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/`
-- [x] 2.2 Testy nadal przechodzą: `cargo test` w `src-tauri/`
-- [x] 2.3 `greet` nie występuje już w backendzie: `grep -r greet src-tauri/src` nic nie zwraca
+- [x] 2.1 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/` — 4ac6b6e
+- [x] 2.2 Testy nadal przechodzą: `cargo test` w `src-tauri/` — 4ac6b6e
+- [x] 2.3 `greet` nie występuje już w backendzie: `grep -r greet src-tauri/src` nic nie zwraca — 4ac6b6e
 
 #### Manual
 
-- [x] 2.4 `docs/reference/contract-surfaces.md` wymienia wszystkie cztery komendy, nazwy plików sejfu i wersje formatu
+- [x] 2.4 `docs/reference/contract-surfaces.md` wymienia wszystkie cztery komendy, nazwy plików sejfu i wersje formatu — 4ac6b6e
 
 ### Phase 3: Bramka w UI i pusta powłoka
 
 #### Automated
 
-- [ ] 3.1 Frontend się buduje (tsc strict + vite): `npm run build`
-- [ ] 3.2 Brak pozostałości demo: `grep -rE "greet|reactLogo" src` nic nie zwraca
-- [ ] 3.3 Brak podatności w zależnościach JS: `npm audit`
+- [x] 3.1 Frontend się buduje (tsc strict + vite): `npm run build`
+- [x] 3.2 Brak pozostałości demo: `grep -rE "greet|reactLogo" src` nic nie zwraca
+- [x] 3.3 Brak podatności w zależnościach JS: `npm audit`
 
 #### Manual
 
-- [ ] 3.4 `npm run tauri dev` na czystym katalogu danych: ekran ustawienia hasła; za krótkie lub niezgodne hasła blokują przycisk; po ustawieniu widać powłokę „kmPlus / Brak wpisów”
-- [ ] 3.5 Ponowne uruchomienie: ekran odblokowania; błędne hasło → „Nieprawidłowe hasło” i wyczyszczone pole; poprawne → powłoka; okno nie zamarza podczas odblokowywania
-- [ ] 3.6 Scenariusz uszkodzenia: po zamknięciu aplikacji skopiować `kmplus.vault` na `kmplus.vault.bak`, zmienić jeden bajt w `kmplus.vault`; przy starcie i poprawnym haśle pojawia się komunikat z datą kopii; „Przywróć kopię” odblokowuje, w katalogu jest `kmplus.vault.damaged-<…>`
-- [ ] 3.7 Scenariusz braku pliku: przenieść `kmplus.vault` poza katalog (zostawić `.bak`); start pokazuje przywracanie kopii, nie ustawianie hasła
+- [x] 3.4 `npm run tauri dev` na czystym katalogu danych: ekran ustawienia hasła; za krótkie lub niezgodne hasła blokują przycisk; po ustawieniu widać powłokę „kmPlus / Brak wpisów”
+- [x] 3.5 Ponowne uruchomienie: ekran odblokowania; błędne hasło → „Nieprawidłowe hasło” i wyczyszczone pole; poprawne → powłoka; okno nie zamarza podczas odblokowywania
+- [x] 3.6 Scenariusz uszkodzenia: po zamknięciu aplikacji skopiować `kmplus.vault` na `kmplus.vault.bak`, zmienić jeden bajt w `kmplus.vault`; przy starcie i poprawnym haśle pojawia się komunikat z datą kopii; „Przywróć kopię” odblokowuje, w katalogu jest `kmplus.vault.damaged-<…>`
+- [x] 3.7 Scenariusz braku pliku: przenieść `kmplus.vault` poza katalog (zostawić `.bak`); start pokazuje przywracanie kopii, nie ustawianie hasła
 
 ### Phase 4: Wydanie i dowód aktualizacji
 
