@@ -42,7 +42,7 @@ Kierowca auta z instalacją gazową nie zna realnego spalania — komputer pokł
 | ID   | Change ID                   | Outcome (user can …)                                                                 | Prerequisites | PRD refs                      | Status   |
 | ---- | --------------------------- | ------------------------------------------------------------------------------------ | ------------- | ----------------------------- | -------- |
 | S-01 | password-unlocked-vault     | ustawić hasło przy pierwszym uruchomieniu i odblokowywać nim zaszyfrowane dane        | —             | FR-001                        | done     |
-| S-02 | first-fillup-consumption    | podać punkt startowy, dodać tankowanie i od razu zobaczyć spalanie tego paliwa i koszt | S-01          | US-01, FR-002, FR-003, FR-007 | proposed |
+| S-02 | first-fillup-consumption    | podać punkt startowy, dodać tankowanie i od razu zobaczyć spalanie tego paliwa i koszt | S-01          | US-01, FR-002, FR-003, FR-007 | in-progress |
 | S-03 | fillup-history-both-fuels   | przeglądać historię tankowań i bieżące spalanie osobno dla gazu i benzyny             | S-02          | US-01, FR-007                 | proposed |
 | S-04 | correct-or-delete-fillup    | poprawić lub usunąć wpis tankowania i zobaczyć przeliczone spalanie                   | S-03          | US-01, FR-004, FR-005         | proposed |
 | S-05 | plan-service                | zaplanować, edytować i usunąć przegląd lub wymianę z progiem przebiegu i/lub daty     | S-01          | US-02, FR-008, FR-009         | proposed |
@@ -104,7 +104,7 @@ Brak osobnych fundamentów w tym kamieniu milowym. Jedyne brakujące warstwy (da
   - Co dokładnie znaczy „koszt” w kryterium sukcesu (kwota tankowania, koszt okresu, cena za litr)? Koszt w zł/100 km jest odłożony (Parked). — Owner: user. Block: no.
   - Jak traktować wpis z przebiegiem niższym niż poprzedni lub z datą sprzed punktu startowego — odrzucić czy ostrzec? — Owner: user. Block: no.
 - **Risk:** Gwiazda przewodnia; parowanie tankowań do pełna tego samego paliwa to miejsce, gdzie najłatwiej o błędną liczbę — testy reguły powstają tu, nie później.
-- **Status:** proposed
+- **Status:** in-progress
 
 ### S-03: Historia i spalanie obu paliw
 
@@ -203,6 +203,7 @@ PRD nie ma otwartych pytań (cztery rozstrzygnięte 2026-09-19). Pytania poniże
 
 ## Parked
 
+- **Edycja punktu startowego** — Why parked: PRD przewiduje edycję tylko tankowań i serwisów; w S-02 punkt startowy ma tylko potwierdzenie przed zapisem (decyzja użytkownika 2026-10-11, przyszłe usprawnienie).
 - **Wykres trendu spalania w czasie** — Why parked: PRD §Success Criteria / Secondary.
 - **Koszt jazdy w zł/100 km osobno dla gazu i benzyny** — Why parked: PRD §Success Criteria / Secondary.
 - **Skanowanie paragonów** — Why parked: PRD §Success Criteria / Secondary; musiałoby działać w pełni offline.
