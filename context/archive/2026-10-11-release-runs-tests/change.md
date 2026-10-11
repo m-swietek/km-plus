@@ -1,10 +1,10 @@
 ---
 change_id: release-runs-tests
 title: Release runs tests
-status: implemented
+status: archived
 created: 2026-10-11
 updated: 2026-10-11
-archived_at: null
+archived_at: 2026-10-11T09:32:32Z
 ---
 
 ## Notes
