@@ -427,12 +427,12 @@ Wszystkie w `cargo test` na `tempfile::TempDir`, tanie parametry KDF (poza teste
 
 #### Automated
 
-- [x] 4.1 Workflow wydania 0.1.2 kończy się sukcesem: `gh run watch` na runie `release.yml`
-- [x] 4.2 Draft `app-v0.1.2` zawiera instalator, `.sig` i `latest.json`: `gh release view app-v0.1.2`
-- [x] 4.3 Workflow wydania 0.1.3 kończy się sukcesem i draft `app-v0.1.3` jest kompletny: `gh release view app-v0.1.3`
+- [x] 4.1 Workflow wydania 0.1.2 kończy się sukcesem: `gh run watch` na runie `release.yml` — e2b5238
+- [x] 4.2 Draft `app-v0.1.2` zawiera instalator, `.sig` i `latest.json`: `gh release view app-v0.1.2` — e2b5238
+- [x] 4.3 Workflow wydania 0.1.3 kończy się sukcesem i draft `app-v0.1.3` jest kompletny: `gh release view app-v0.1.3` — e2b5238
 
 #### Manual
 
-- [x] 4.4 Zainstalowana 0.1.1 aktualizuje się do 0.1.2 przez baner; pierwsze uruchomienie pokazuje ustawianie hasła; plik `%APPDATA%\io.github.m-swietek.kmplus\kmplus.vault` istnieje i nie zawiera jawnego tekstu (np. brak `format_version` i `created_at` w bajtach pliku)
-- [x] 4.5 Na 0.1.2: zamknięcie i ponowne otwarcie wymaga hasła; błędne hasło daje komunikat; poprawne odblokowuje
-- [x] 4.6 Aktualizacja 0.1.2 → 0.1.3 przez baner: SHA-256 `kmplus.vault` identyczny przed i po aktualizacji, a to samo hasło odblokowuje aplikację (bez ekranu ustawiania hasła)
+- [x] 4.4 Zainstalowana 0.1.1 aktualizuje się do 0.1.2 przez baner; pierwsze uruchomienie pokazuje ustawianie hasła; plik `%APPDATA%\io.github.m-swietek.kmplus\kmplus.vault` istnieje i nie zawiera jawnego tekstu (np. brak `format_version` i `created_at` w bajtach pliku) — e2b5238
+- [x] 4.5 Na 0.1.2: zamknięcie i ponowne otwarcie wymaga hasła; błędne hasło daje komunikat; poprawne odblokowuje — e2b5238
+- [x] 4.6 Aktualizacja 0.1.2 → 0.1.3 przez baner: SHA-256 `kmplus.vault` identyczny przed i po aktualizacji, a to samo hasło odblokowuje aplikację (bez ekranu ustawiania hasła) — e2b5238
