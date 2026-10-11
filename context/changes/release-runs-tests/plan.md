@@ -174,11 +174,11 @@ Gałąź tymczasowa z celowo zepsutym kodem i wersją `0.0.0`, uruchomienie work
 
 #### Automated
 
-- [x] 2.1 Run z gałęzi tymczasowej kończy się porażką w kroku „Rust tests”, a krok `tauri-action` jest pominięty: `gh run view <id> --json jobs`
-- [x] 2.2 Żaden nowy tag ani wydanie nie powstały: `gh release list` i `git ls-remote --tags origin` pokazują tylko `app-v0.1.0`…`app-v0.1.3`
-- [x] 2.3 Gałąź tymczasowa usunięta: `git ls-remote --heads origin release-gate-redcheck` nic nie zwraca
-- [x] 2.4 `main` z krokiem wypchnięty: `git status -sb` pokazuje `main...origin/main` bez rozbieżności
+- [x] 2.1 Run z gałęzi tymczasowej kończy się porażką w kroku „Rust tests”, a krok `tauri-action` jest pominięty: `gh run view <id> --json jobs` — b23621d
+- [x] 2.2 Żaden nowy tag ani wydanie nie powstały: `gh release list` i `git ls-remote --tags origin` pokazują tylko `app-v0.1.0`…`app-v0.1.3` — b23621d
+- [x] 2.3 Gałąź tymczasowa usunięta: `git ls-remote --heads origin release-gate-redcheck` nic nie zwraca — b23621d
+- [x] 2.4 `main` z krokiem wypchnięty: `git status -sb` pokazuje `main...origin/main` bez rozbieżności — b23621d
 
 #### Manual
 
-- [x] 2.5 Log kroku „Rust tests” w runie pokazuje padający `password_shorter_than_8_chars_rejected` i pozostałe testy uruchomione (nie „0 tests”)
+- [x] 2.5 Log kroku „Rust tests” w runie pokazuje padający `password_shorter_than_8_chars_rejected` i pozostałe testy uruchomione (nie „0 tests”) — b23621d
