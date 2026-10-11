@@ -26,6 +26,11 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
+      # A red Rust test stops the job here, before any tag or draft release exists.
+      - name: Rust tests
+        run: cargo test --locked
+        working-directory: src-tauri
+
       - name: install frontend dependencies
         run: npm ci
 

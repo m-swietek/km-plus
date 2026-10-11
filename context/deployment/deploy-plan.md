@@ -109,6 +109,7 @@ Cofnięcie wydania do draftu lub jego usunięcie (ręcznie) zatrzymuje pobrania 
 - 2026-10-03: 0.1.0 opublikowane ręcznie (18:00 UTC). Anonimowo: `releases/latest/download/latest.json` → 200, wersja 0.1.0; URL instalatora z API z nagłówkiem `Accept: application/octet-stream` zwraca plik o tym samym SHA-256. Wersja podbita do 0.1.1 na potrzeby testu aktualizacji.
 - 2026-10-03, run 37142738798: sukces, draft `app-v0.1.1` (SHA-256 `3EA03214…65E488`), podpis w `latest.json` zgodny z `.sig`. Opublikowany ręcznie 18:09 UTC.
 - 2026-10-03: test aktualizacji zaliczony (potwierdzenie użytkownika): zainstalowana 0.1.0 pokazała baner i zaktualizowała się w miejscu. W rejestrze deinstalacji jeden wpis `km-plus` 0.1.1 (`%LOCALAPPDATA%\km-plus`). Publiczny `latest.json` serwuje 0.1.1; pierwsze anonimowe pobranie zaraz po publikacji zwróciło jeszcze 0.1.0 (cache przekierowania po stronie GitHub), kolejne już 0.1.1. **Wdrożenie zakończone.**
+- 2026-10-11: `release.yml` uruchamia `cargo test --locked` (w `src-tauri/`) przed `npm ci` i buildem; czerwony test kończy job bez tagu i draftu (zmiana `release-runs-tests`).
 
 ## Pliki
 - zmieniane: `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, `src-tauri/src/lib.rs`, `src-tauri/capabilities/default.json`, `package.json`, `package-lock.json`, `src/App.tsx`, `src/App.css`, `README.md`
