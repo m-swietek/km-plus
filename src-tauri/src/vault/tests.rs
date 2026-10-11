@@ -479,7 +479,7 @@ fn newer_envelope_version_is_too_new() {
 
 #[test]
 fn newer_format_version_is_too_new() {
-    let payload = br#"{"format_version":2,"created_at":"not a number","new_field":[1,2]}"#;
+    let payload = br#"{"format_version":3,"created_at":"not a number","new_field":[1,2]}"#;
     assert_eq!(data::decode(payload), Err(data::DecodeError::TooNew));
 
     let dir = TempDir::new().unwrap();
@@ -519,4 +519,250 @@ fn default_kdf_params_written_to_header() {
     let (header, _) = format::parse_header(&bytes).unwrap();
     assert_eq!(header.params, KdfParams::default());
     expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
+}
+
+// --- Format v2, migration from v1 and the pre-migration copy ---
+
+const V1_PAYLOAD: &[u8] = br#"{"format_version":1,"created_at":1700000000}"#;
+
+/// Replaces the main file with a v1 payload sealed under the vault's key, as
+/// written by app 0.1.3. Returns the bytes of that v1 file.
+fn write_v1_main(dir: &Path) -> Vec<u8> {
+    let vault = new_vault(dir);
+    let header = Header {
+        params: vault.params,
+        salt: vault.salt,
+    };
+    let bytes = format::seal(&vault.key, &header, V1_PAYLOAD);
+    fs::write(main_path(dir), &bytes).unwrap();
+    bytes
+}
+
+fn pre_migration_copies(dir: &Path) -> Vec<(String, Vec<u8>)> {
+    let mut copies: Vec<_> = fs::read_dir(dir)
+        .unwrap()
+        .map(|e| e.unwrap())
+        .filter(|e| e.file_name().to_string_lossy().starts_with(PRE_MIGRATION_PREFIX))
+        .map(|e| {
+            (
+                e.file_name().to_string_lossy().into_owned(),
+                fs::read(e.path()).unwrap(),
+            )
+        })
+        .collect();
+    copies.sort();
+    copies
+}
+
+fn sample_fill_up(id: u64) -> crate::fuel::FillUp {
+    crate::fuel::FillUp {
+        id,
+        fuel: crate::fuel::Fuel::Lpg,
+        date: "2026-01-05".into(),
+        odometer_km: 100_400,
+        litres_cl: 4_000,
+        amount_grosze: 12_000,
+        full_tank: true,
+    }
+}
+
+#[test]
+fn v1_payload_migrates_to_empty_v2() {
+    let decoded = data::decode(V1_PAYLOAD).unwrap();
+    assert_eq!(decoded.migrated_from, Some(1));
+    assert_eq!(
+        decoded.data,
+        VaultData {
+            format_version: 2,
+            created_at: 1_700_000_000,
+            start_point: None,
+            fill_ups: vec![],
+            next_fill_up_id: 1,
+        }
+    );
+
+    // A current payload decodes as is and round-trips through encode.
+    let mut data = VaultData::new(5);
+    data.start_point = Some(crate::fuel::StartPoint {
+        date: "2026-01-01".into(),
+        odometer_km: 100_000,
+    });
+    data.fill_ups.push(sample_fill_up(1));
+    data.next_fill_up_id = 2;
+    let encoded = data::encode(&data).unwrap();
+    let decoded = data::decode(&encoded).unwrap();
+    assert_eq!(decoded.migrated_from, None);
+    assert_eq!(decoded.data, data);
+
+    // A broken v1 payload is still damage.
+    assert_eq!(
+        data::decode(br#"{"format_version":1}"#),
+        Err(data::DecodeError::Malformed)
+    );
+}
+
+#[test]
+fn v2_missing_field_is_malformed() {
+    let full = serde_json::json!({
+        "format_version": 2,
+        "created_at": 5,
+        "start_point": null,
+        "fill_ups": [],
+        "next_fill_up_id": 1
+    });
+    assert!(data::decode(full.to_string().as_bytes()).is_ok());
+    for field in ["created_at", "start_point", "fill_ups", "next_fill_up_id"] {
+        let mut payload = full.clone();
+        payload.as_object_mut().unwrap().remove(field);
+        assert_eq!(
+            data::decode(payload.to_string().as_bytes()),
+            Err(data::DecodeError::Malformed),
+            "missing {field}"
+        );
+    }
+    // A fill-up missing a field is damage too.
+    let mut entry = serde_json::to_value(sample_fill_up(1)).unwrap();
+    entry.as_object_mut().unwrap().remove("full_tank");
+    let mut payload = full.clone();
+    payload["fill_ups"] = serde_json::json!([entry]);
+    assert_eq!(
+        data::decode(payload.to_string().as_bytes()),
+        Err(data::DecodeError::Malformed)
+    );
+    // Unknown versions below the current one are damage, not migration input.
+    assert_eq!(
+        data::decode(br#"{"format_version":0,"created_at":5}"#),
+        Err(data::DecodeError::Malformed)
+    );
+}
+
+#[test]
+fn unlock_of_v1_vault_writes_nothing() {
+    let dir = TempDir::new().unwrap();
+    write_v1_main(dir.path());
+    let before = snapshot(dir.path());
+
+    let vault = expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
+    assert_eq!(vault.data.format_version, data::CURRENT_FORMAT_VERSION);
+    assert_eq!(vault.data.created_at, 1_700_000_000);
+    assert_eq!(vault.data.start_point, None);
+    assert!(vault.pre_migration_copy_due);
+    assert_eq!(snapshot(dir.path()), before);
+}
+
+#[test]
+fn first_save_after_migration_writes_pre_v2_copy_of_v1_bytes() {
+    let dir = TempDir::new().unwrap();
+    let v1_bytes = write_v1_main(dir.path());
+    let mut vault = expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
+    assert!(pre_migration_copies(dir.path()).is_empty());
+
+    vault.save().unwrap();
+
+    let copies = pre_migration_copies(dir.path());
+    assert_eq!(copies.len(), 1);
+    assert!(copies[0].0.starts_with("kmplus.vault.pre-v2-"), "{}", copies[0].0);
+    assert_eq!(copies[0].1, v1_bytes);
+    assert!(!vault.pre_migration_copy_due);
+
+    // The main file is now v2 and opens without a migration.
+    let reopened = expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
+    assert!(!reopened.pre_migration_copy_due);
+    assert_eq!(reopened.data, vault.data);
+    // The usual rotation still happened.
+    assert_eq!(fs::read(dir.path().join(BACKUP_FILE)).unwrap(), v1_bytes);
+}
+
+#[test]
+fn second_save_writes_no_further_copy() {
+    let dir = TempDir::new().unwrap();
+    let v1_bytes = write_v1_main(dir.path());
+    let mut vault = expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
+    vault.save().unwrap();
+    vault.save().unwrap();
+    vault.save().unwrap();
+
+    let copies = pre_migration_copies(dir.path());
+    assert_eq!(copies.len(), 1);
+    assert_eq!(copies[0].1, v1_bytes);
+}
+
+#[test]
+fn restore_backup_from_v1_then_save_writes_pre_v2_copy() {
+    let dir = TempDir::new().unwrap();
+    let v1_bytes = write_v1_main(dir.path());
+    // The v1 file becomes the backup and the main file is damaged.
+    fs::write(dir.path().join(BACKUP_FILE), &v1_bytes).unwrap();
+    fs::write(main_path(dir.path()), b"garbage").unwrap();
+
+    let mut vault = expect_unlocked(restore_backup(dir.path(), PASSWORD).unwrap());
+    assert!(vault.pre_migration_copy_due);
+    assert!(pre_migration_copies(dir.path()).is_empty());
+
+    vault.save().unwrap();
+    let copies = pre_migration_copies(dir.path());
+    assert_eq!(copies.len(), 1);
+    assert_eq!(copies[0].1, v1_bytes);
+}
+
+#[test]
+fn v2_vault_save_writes_no_pre_migration_copy() {
+    let dir = TempDir::new().unwrap();
+    let mut vault = new_vault(dir.path());
+    vault.save().unwrap();
+    let mut vault = expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
+    assert!(!vault.pre_migration_copy_due);
+    vault.save().unwrap();
+    assert!(pre_migration_copies(dir.path()).is_empty());
+}
+
+#[test]
+fn pre_migration_copy_name_is_unique() {
+    let dir = TempDir::new().unwrap();
+    let base = format!(
+        "{PRE_MIGRATION_PREFIX}{}-{}",
+        data::CURRENT_FORMAT_VERSION,
+        now_unix_secs()
+    );
+    let first = unique_path(dir.path(), &base).unwrap();
+    fs::write(&first, b"x").unwrap();
+    let second = unique_path(dir.path(), &base).unwrap();
+    assert_ne!(first, second);
+    assert_eq!(
+        second.file_name().unwrap().to_string_lossy(),
+        format!("{base}-1")
+    );
+}
+
+#[test]
+fn commit_failure_keeps_previous_data_in_memory() {
+    let dir = TempDir::new().unwrap();
+    let mut vault = new_vault(dir.path());
+
+    // A successful commit replaces the data and reaches the disk.
+    let mut next = vault.data.clone();
+    next.fill_ups.push(sample_fill_up(1));
+    next.next_fill_up_id = 2;
+    vault.commit(next.clone()).unwrap();
+    assert_eq!(vault.data, next);
+    assert_eq!(
+        expect_unlocked(unlock(dir.path(), PASSWORD).unwrap()).data,
+        next
+    );
+
+    // A directory in place of the scratch file makes the save fail.
+    fs::create_dir(dir.path().join(TMP_FILE)).unwrap();
+    let before_data = vault.data.clone();
+    let mut failing = before_data.clone();
+    failing.fill_ups.push(sample_fill_up(2));
+    failing.next_fill_up_id = 3;
+    assert!(matches!(vault.commit(failing), Err(VaultError::Io(_))));
+    assert_eq!(vault.data, before_data);
+
+    // The main file still holds the last committed data.
+    fs::remove_dir(dir.path().join(TMP_FILE)).unwrap();
+    assert_eq!(
+        expect_unlocked(unlock(dir.path(), PASSWORD).unwrap()).data,
+        before_data
+    );
 }

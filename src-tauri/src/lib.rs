@@ -1,3 +1,7 @@
+// Used only by tests until the fuel Tauri commands land (Phase 2 of
+// first-fillup-consumption); drop the allow then.
+#[allow(dead_code)]
+mod fuel;
 mod vault;
 
 use vault::commands::{

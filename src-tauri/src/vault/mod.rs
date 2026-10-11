@@ -9,6 +9,9 @@
 //! - `kmplus.vault.tmp`, `kmplus.vault.bak.tmp` — scratch files of atomic writes
 //! - `kmplus.vault.damaged-<unix s>` — damaged main file set aside on restore
 //!   (never deleted by the app)
+//! - `kmplus.vault.pre-v<N>-<unix s>` — untouched copy of the main file in an
+//!   older payload format, written by the first save after a migration to
+//!   format `N` (never deleted by the app)
 
 pub mod commands;
 mod data;
@@ -36,6 +39,8 @@ pub const BACKUP_FILE: &str = "kmplus.vault.bak";
 pub const TMP_FILE: &str = "kmplus.vault.tmp";
 pub const BACKUP_TMP_FILE: &str = "kmplus.vault.bak.tmp";
 pub const DAMAGED_PREFIX: &str = "kmplus.vault.damaged-";
+/// Followed by `<CURRENT_FORMAT_VERSION>-<unix s>`.
+pub const PRE_MIGRATION_PREFIX: &str = "kmplus.vault.pre-v";
 
 /// Minimum password length in Unicode scalar values; no trimming is applied.
 pub const MIN_PASSWORD_CHARS: usize = 8;
@@ -86,6 +91,9 @@ pub struct UnlockedVault {
     salt: [u8; SALT_LEN],
     params: KdfParams,
     pub data: VaultData,
+    /// The file on disk is in an older payload format (migrated in memory);
+    /// the next save first keeps an untouched copy of it.
+    pre_migration_copy_due: bool,
 }
 
 impl fmt::Debug for UnlockedVault {
@@ -95,6 +103,7 @@ impl fmt::Debug for UnlockedVault {
             .field("key", &"<redacted>")
             .field("params", &self.params)
             .field("data", &self.data)
+            .field("pre_migration_copy_due", &self.pre_migration_copy_due)
             .finish()
     }
 }
@@ -102,7 +111,8 @@ impl fmt::Debug for UnlockedVault {
 impl UnlockedVault {
     /// Encrypts the current data under a fresh nonce (same salt and KDF
     /// params) and writes it atomically, rotating the previous main file into
-    /// `kmplus.vault.bak` first.
+    /// `kmplus.vault.bak` first. After a migration, the main file (still in
+    /// the old format) is first copied to `kmplus.vault.pre-v<N>-<unix s>`.
     pub fn save(&mut self) -> Result<(), VaultError> {
         let plaintext = data::encode(&self.data)?;
         let header = Header {
@@ -112,8 +122,25 @@ impl UnlockedVault {
         let sealed = format::seal(&self.key, &header, &plaintext);
 
         let main = self.dir.join(VAULT_FILE);
+        let previous = read_optional(&main)?;
+        // (0) after a migration: untouched old-format file -> pre-v<N> copy.
+        // The flag is cleared only once the copy is safely on disk.
+        if self.pre_migration_copy_due {
+            if let Some(previous) = &previous {
+                let copy = unique_path(
+                    &self.dir,
+                    &format!(
+                        "{PRE_MIGRATION_PREFIX}{}-{}",
+                        data::CURRENT_FORMAT_VERSION,
+                        now_unix_secs()
+                    ),
+                )?;
+                write_synced(&copy, previous)?;
+            }
+            self.pre_migration_copy_due = false;
+        }
         // (1) previous version -> .bak.tmp -> .bak
-        if let Some(previous) = read_optional(&main)? {
+        if let Some(previous) = previous {
             let bak_tmp = self.dir.join(BACKUP_TMP_FILE);
             write_synced(&bak_tmp, &previous)?;
             fs::rename(&bak_tmp, self.dir.join(BACKUP_FILE))?;
@@ -122,6 +149,19 @@ impl UnlockedVault {
         let tmp = self.dir.join(TMP_FILE);
         write_synced(&tmp, &sealed)?;
         fs::rename(&tmp, &main)?;
+        Ok(())
+    }
+
+    /// Replaces the data and saves it. When the save fails, the previous data
+    /// stays in memory, so the session never shows what is not on disk.
+    // Called by the fuel commands added in Phase 2; drop the allow then.
+    #[allow(dead_code)]
+    pub fn commit(&mut self, next: VaultData) -> Result<(), VaultError> {
+        let previous = std::mem::replace(&mut self.data, next);
+        if let Err(e) = self.save() {
+            self.data = previous;
+            return Err(e);
+        }
         Ok(())
     }
 }
@@ -158,6 +198,7 @@ pub fn create(dir: &Path, password: &str, params: KdfParams) -> Result<UnlockedV
         salt,
         params,
         data: VaultData::new(now_unix_secs()),
+        pre_migration_copy_due: false,
     };
     vault.save()?;
     Ok(vault)
@@ -240,12 +281,13 @@ fn try_open(dir: &Path, bytes: &[u8], password: &str) -> Attempt {
         Err(OpenError::Malformed) => return Attempt::Malformed,
     };
     match data::decode(&plaintext) {
-        Ok(data) => Attempt::Opened(UnlockedVault {
+        Ok(decoded) => Attempt::Opened(UnlockedVault {
             dir: dir.to_path_buf(),
             key,
             salt: header.salt,
             params: header.params,
-            data,
+            data: decoded.data,
+            pre_migration_copy_due: decoded.migrated_from.is_some(),
         }),
         Err(data::DecodeError::TooNew) => Attempt::TooNew,
         Err(data::DecodeError::Malformed) => Attempt::Malformed,
@@ -271,8 +313,12 @@ fn backup_saved_at_ms(dir: &Path) -> Result<Option<u64>, VaultError> {
 }
 
 fn damaged_path(dir: &Path) -> Result<PathBuf, VaultError> {
-    let base = format!("{DAMAGED_PREFIX}{}", now_unix_secs());
-    let mut candidate = dir.join(&base);
+    unique_path(dir, &format!("{DAMAGED_PREFIX}{}", now_unix_secs()))
+}
+
+/// `dir/base`, or `dir/base-<n>` when that name is already taken.
+fn unique_path(dir: &Path, base: &str) -> Result<PathBuf, VaultError> {
+    let mut candidate = dir.join(base);
     let mut n = 1u32;
     while exists(&candidate)? {
         candidate = dir.join(format!("{base}-{n}"));
