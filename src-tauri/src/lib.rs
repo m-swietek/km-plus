@@ -1,9 +1,7 @@
-// Used only by tests until the fuel Tauri commands land (Phase 2 of
-// first-fillup-consumption); drop the allow then.
-#[allow(dead_code)]
 mod fuel;
 mod vault;
 
+use fuel::commands::{add_fill_up, fuel_overview, set_start_point};
 use vault::commands::{
     vault_restore_backup, vault_setup, vault_status, vault_unlock, VaultSession,
 };
@@ -18,7 +16,10 @@ pub fn run() {
             vault_status,
             vault_setup,
             vault_unlock,
-            vault_restore_backup
+            vault_restore_backup,
+            fuel_overview,
+            set_start_point,
+            add_fill_up
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

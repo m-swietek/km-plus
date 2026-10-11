@@ -385,26 +385,26 @@ Wydanie 0.1.4 istniejącym pipeline'em (pierwszy zielony przebieg bramki `cargo 
 
 #### Automated
 
-- [x] 1.1 Testy reguły i sejfu przechodzą: `cargo test` w `src-tauri/`
-- [x] 1.2 Test wyroczni przechodzi: `cargo test oracle_sample_matches_hand_computed_results` w `src-tauri/`
-- [x] 1.3 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/`
+- [x] 1.1 Testy reguły i sejfu przechodzą: `cargo test` w `src-tauri/` — c2082f8
+- [x] 1.2 Test wyroczni przechodzi: `cargo test oracle_sample_matches_hand_computed_results` w `src-tauri/` — c2082f8
+- [x] 1.3 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/` — c2082f8
 
 #### Manual
 
-- [x] 1.4 Użytkownik potwierdza, że wyniki w tabeli „Próbka wyroczni” zgadzają się z tym, jak liczy jego arkusz (albo podmienia próbkę na fragment prawdziwych danych z arkusza z wynikami z arkusza)
-- [x] 1.5 Przegląd listy testów potwierdza pokrycie każdego punktu z Testing Strategy → Unit Tests
+- [x] 1.4 Użytkownik potwierdza, że wyniki w tabeli „Próbka wyroczni” zgadzają się z tym, jak liczy jego arkusz (albo podmienia próbkę na fragment prawdziwych danych z arkusza z wynikami z arkusza) — c2082f8
+- [x] 1.5 Przegląd listy testów potwierdza pokrycie każdego punktu z Testing Strategy → Unit Tests — c2082f8
 
 ### Phase 2: Komendy Tauri
 
 #### Automated
 
-- [ ] 2.1 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/`
-- [ ] 2.2 Testy (w tym kształtu JSON nowych wyników) przechodzą: `cargo test` w `src-tauri/`
-- [ ] 2.3 Trzy komendy są zarejestrowane: `grep -E "fuel_overview|set_start_point|add_fill_up" src-tauri/src/lib.rs` zwraca wszystkie trzy
+- [x] 2.1 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/`
+- [x] 2.2 Testy (w tym kształtu JSON nowych wyników) przechodzą: `cargo test` w `src-tauri/`
+- [x] 2.3 Trzy komendy są zarejestrowane: `grep -E "fuel_overview|set_start_point|add_fill_up" src-tauri/src/lib.rs` zwraca wszystkie trzy
 
 #### Manual
 
-- [ ] 2.4 `docs/reference/contract-surfaces.md` wymienia `format_version` 2, plik `pre-v`, pola ładunku v2 z jednostkami i trzy nowe komendy z wartościami `kind`
+- [x] 2.4 `docs/reference/contract-surfaces.md` wymienia `format_version` 2, plik `pre-v`, pola ładunku v2 z jednostkami i trzy nowe komendy z wartościami `kind`
 
 ### Phase 3: Punkt startowy, formularz tankowania i wynik w UI
 

@@ -155,7 +155,7 @@ fn data_dir(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(dir)
 }
 
-fn lock_session(
+pub(crate) fn lock_session(
     session: &VaultSession,
 ) -> Result<std::sync::MutexGuard<'_, Option<UnlockedVault>>, String> {
     session

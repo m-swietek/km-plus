@@ -9,6 +9,7 @@
 //! stored data is integer-only, `f64` appears only in computed results.
 //! Dates are `YYYY-MM-DD` strings and are compared lexicographically.
 
+pub mod commands;
 #[cfg(test)]
 mod tests;
 

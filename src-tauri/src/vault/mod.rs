@@ -154,8 +154,6 @@ impl UnlockedVault {
 
     /// Replaces the data and saves it. When the save fails, the previous data
     /// stays in memory, so the session never shows what is not on disk.
-    // Called by the fuel commands added in Phase 2; drop the allow then.
-    #[allow(dead_code)]
     pub fn commit(&mut self, next: VaultData) -> Result<(), VaultError> {
         let previous = std::mem::replace(&mut self.data, next);
         if let Err(e) = self.save() {
