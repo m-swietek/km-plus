@@ -163,22 +163,22 @@ Gałąź tymczasowa z celowo zepsutym kodem i wersją `0.0.0`, uruchomienie work
 
 #### Automated
 
-- [x] 1.1 Polecenie kroku przechodzi lokalnie: `cargo test --locked` w `src-tauri/`
-- [x] 1.2 Krok stoi przed `npm ci` i `tauri-action`: numer linii `name: Rust tests` w `release.yml` jest mniejszy niż numery linii `npm ci` i `tauri-apps/tauri-action`
+- [x] 1.1 Polecenie kroku przechodzi lokalnie: `cargo test --locked` w `src-tauri/` — 45e6ae2
+- [x] 1.2 Krok stoi przed `npm ci` i `tauri-action`: numer linii `name: Rust tests` w `release.yml` jest mniejszy niż numery linii `npm ci` i `tauri-apps/tauri-action` — 45e6ae2
 
 #### Manual
 
-- [x] 1.3 Przegląd diffu `release.yml`: dodany wyłącznie krok „Rust tests”, wcięcia zgodne z sąsiednimi krokami
+- [x] 1.3 Przegląd diffu `release.yml`: dodany wyłącznie krok „Rust tests”, wcięcia zgodne z sąsiednimi krokami — 45e6ae2
 
 ### Phase 2: Dowód bramki czerwonym przebiegiem
 
 #### Automated
 
-- [ ] 2.1 Run z gałęzi tymczasowej kończy się porażką w kroku „Rust tests”, a krok `tauri-action` jest pominięty: `gh run view <id> --json jobs`
-- [ ] 2.2 Żaden nowy tag ani wydanie nie powstały: `gh release list` i `git ls-remote --tags origin` pokazują tylko `app-v0.1.0`…`app-v0.1.3`
-- [ ] 2.3 Gałąź tymczasowa usunięta: `git ls-remote --heads origin release-gate-redcheck` nic nie zwraca
-- [ ] 2.4 `main` z krokiem wypchnięty: `git status -sb` pokazuje `main...origin/main` bez rozbieżności
+- [x] 2.1 Run z gałęzi tymczasowej kończy się porażką w kroku „Rust tests”, a krok `tauri-action` jest pominięty: `gh run view <id> --json jobs`
+- [x] 2.2 Żaden nowy tag ani wydanie nie powstały: `gh release list` i `git ls-remote --tags origin` pokazują tylko `app-v0.1.0`…`app-v0.1.3`
+- [x] 2.3 Gałąź tymczasowa usunięta: `git ls-remote --heads origin release-gate-redcheck` nic nie zwraca
+- [x] 2.4 `main` z krokiem wypchnięty: `git status -sb` pokazuje `main...origin/main` bez rozbieżności
 
 #### Manual
 
-- [ ] 2.5 Log kroku „Rust tests” w runie pokazuje padający `password_shorter_than_8_chars_rejected` i pozostałe testy uruchomione (nie „0 tests”)
+- [x] 2.5 Log kroku „Rust tests” w runie pokazuje padający `password_shorter_than_8_chars_rejected` i pozostałe testy uruchomione (nie „0 tests”)
