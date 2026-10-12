@@ -398,29 +398,29 @@ Wydanie 0.1.4 istniejącym pipeline'em (pierwszy zielony przebieg bramki `cargo 
 
 #### Automated
 
-- [x] 2.1 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/`
-- [x] 2.2 Testy (w tym kształtu JSON nowych wyników) przechodzą: `cargo test` w `src-tauri/`
-- [x] 2.3 Trzy komendy są zarejestrowane: `grep -E "fuel_overview|set_start_point|add_fill_up" src-tauri/src/lib.rs` zwraca wszystkie trzy
+- [x] 2.1 Projekt Rusta się kompiluje: `cargo check` w `src-tauri/` — 92064b0
+- [x] 2.2 Testy (w tym kształtu JSON nowych wyników) przechodzą: `cargo test` w `src-tauri/` — 92064b0
+- [x] 2.3 Trzy komendy są zarejestrowane: `grep -E "fuel_overview|set_start_point|add_fill_up" src-tauri/src/lib.rs` zwraca wszystkie trzy — 92064b0
 
 #### Manual
 
-- [x] 2.4 `docs/reference/contract-surfaces.md` wymienia `format_version` 2, plik `pre-v`, pola ładunku v2 z jednostkami i trzy nowe komendy z wartościami `kind`
+- [x] 2.4 `docs/reference/contract-surfaces.md` wymienia `format_version` 2, plik `pre-v`, pola ładunku v2 z jednostkami i trzy nowe komendy z wartościami `kind` — 92064b0
 
 ### Phase 3: Punkt startowy, formularz tankowania i wynik w UI
 
 #### Automated
 
-- [ ] 3.1 Frontend się buduje (tsc strict + vite): `npm run build`
-- [ ] 3.2 Testy Rusta nadal przechodzą: `cargo test` w `src-tauri/`
-- [ ] 3.3 Brak podatności w zależnościach JS: `npm audit`
+- [x] 3.1 Frontend się buduje (tsc strict + vite): `npm run build`
+- [x] 3.2 Testy Rusta nadal przechodzą: `cargo test` w `src-tauri/`
+- [x] 3.3 Brak podatności w zależnościach JS: `npm audit`
 
 #### Manual
 
-- [ ] 3.4 `npm run tauri dev` na czystym katalogu danych: ustawienie hasła → ekran punktu startowego; „Dalej” pokazuje podsumowanie, „Popraw” wraca do pól z danymi, „Zapisz” prowadzi do kart „Brak wyniku” dla obu paliw
-- [ ] 3.5 Wpisanie wpisów 1–5 z „Próbki wyroczni” (z przecinkiem jako separatorem): po każdym zapisie wynik i cena zgodne z tabelą (2 miejsca); karty po wpisie 5: Gaz 9,00, Benzyna 4,44
-- [ ] 3.6 Odrzucenia: przebieg ≤ startowy, data przed startem, wpis Gazu przy 100 400 km ponownie, wpis z przebiegiem 100 500 i datą 2026-01-20 (konflikt kolejności) — każdy daje czytelny komunikat, a karty się nie zmieniają
-- [ ] 3.7 Restart i odblokowanie: karty pokazują te same wartości co przed zamknięciem
-- [ ] 3.8 Sejf v1 z S-01 (katalog danych sprzed tej zmiany, np. kopia z zainstalowanej 0.1.3): odblokowanie działa i pokazuje ekran punktu startowego; przed zapisem w katalogu nie ma pliku `pre-v2-*`, po zapisie punktu startowego jest
+- [x] 3.4 `npm run tauri dev` na czystym katalogu danych: ustawienie hasła → ekran punktu startowego; „Dalej” pokazuje podsumowanie, „Popraw” wraca do pól z danymi, „Zapisz” prowadzi do kart „Brak wyniku” dla obu paliw
+- [x] 3.5 Wpisanie wpisów 1–5 z „Próbki wyroczni” (z przecinkiem jako separatorem): po każdym zapisie wynik i cena zgodne z tabelą (2 miejsca); karty po wpisie 5: Gaz 9,00, Benzyna 4,44
+- [x] 3.6 Odrzucenia: przebieg ≤ startowy, data przed startem, wpis Gazu przy 100 400 km ponownie, wpis z przebiegiem 100 500 i datą 2026-01-20 (konflikt kolejności) — każdy daje czytelny komunikat, a karty się nie zmieniają
+- [x] 3.7 Restart i odblokowanie: karty pokazują te same wartości co przed zamknięciem
+- [x] 3.8 Sejf v1 z S-01 (katalog danych sprzed tej zmiany, np. kopia z zainstalowanej 0.1.3): odblokowanie działa i pokazuje ekran punktu startowego; przed zapisem w katalogu nie ma pliku `pre-v2-*`, po zapisie punktu startowego jest
 
 ### Phase 4: Wydanie 0.1.4 i dowód migracji
 

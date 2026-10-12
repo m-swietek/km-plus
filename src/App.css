@@ -119,8 +119,81 @@ button:focus-visible {
   font-weight: 500;
 }
 
-.shell-empty {
-  opacity: 0.7;
+.fuel-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1em;
+  margin-bottom: 1.5em;
+}
+
+.fuel-card {
+  padding: 0.75em 1em;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+}
+
+.fuel-card h2,
+.fill-up h2 {
+  margin: 0 0 0.25em;
+  font-size: 1.1em;
+}
+
+.fuel-card p {
+  margin: 0;
+}
+
+.fuel-card-value {
+  font-size: 1.4em;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.fuel-card-meta {
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+.fuel-choice {
+  display: flex;
+  gap: 1.5em;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.fuel-choice legend {
+  padding: 0;
+  margin-bottom: 0.25em;
+}
+
+.fuel-choice label,
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  padding: 0;
+  box-shadow: none;
+}
+
+.fill-up-result {
+  margin-top: 1em;
+  padding: 0.75em 1em;
+  border-radius: 8px;
+  border: 1px solid #396cd8;
+  text-align: left;
+}
+
+.fill-up-result p {
+  margin: 0;
+}
+
+.fill-up-result-title {
+  font-weight: 600;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -145,5 +218,9 @@ button:focus-visible {
 
   .gate-error {
     color: #ff8a80;
+  }
+
+  .fuel-card {
+    background-color: #0f0f0f98;
   }
 }
