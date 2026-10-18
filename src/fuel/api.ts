@@ -26,7 +26,7 @@ export type StartPointRejection = "invalidDate" | "odometerOutOfRange";
 export type SetStartPointResult =
   | { kind: "ok" }
   | { kind: "alreadySet" }
-  | { kind: "invalid"; reason: StartPointRejection };
+  | { kind: "invalid"; reason: { kind: StartPointRejection } };
 
 export type FillUpInput = {
   fuel: Fuel;

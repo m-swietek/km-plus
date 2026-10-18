@@ -6,7 +6,8 @@
 //! Files in the data directory:
 //! - `kmplus.vault` — main vault
 //! - `kmplus.vault.bak` — previous good version (refreshed on every save)
-//! - `kmplus.vault.tmp`, `kmplus.vault.bak.tmp` — scratch files of atomic writes
+//! - `kmplus.vault.tmp`, `kmplus.vault.bak.tmp`, `kmplus.vault.pre.tmp` — scratch
+//!   files of atomic writes
 //! - `kmplus.vault.damaged-<unix s>` — damaged main file set aside on restore
 //!   (never deleted by the app)
 //! - `kmplus.vault.pre-v<N>-<unix s>` — untouched copy of the main file in an
@@ -38,6 +39,7 @@ pub const VAULT_FILE: &str = "kmplus.vault";
 pub const BACKUP_FILE: &str = "kmplus.vault.bak";
 pub const TMP_FILE: &str = "kmplus.vault.tmp";
 pub const BACKUP_TMP_FILE: &str = "kmplus.vault.bak.tmp";
+pub const PRE_MIGRATION_TMP_FILE: &str = "kmplus.vault.pre.tmp";
 pub const DAMAGED_PREFIX: &str = "kmplus.vault.damaged-";
 /// Followed by `<CURRENT_FORMAT_VERSION>-<unix s>`.
 pub const PRE_MIGRATION_PREFIX: &str = "kmplus.vault.pre-v";
@@ -124,7 +126,9 @@ impl UnlockedVault {
         let main = self.dir.join(VAULT_FILE);
         let previous = read_optional(&main)?;
         // (0) after a migration: untouched old-format file -> pre-v<N> copy.
-        // The flag is cleared only once the copy is safely on disk.
+        // The flag is cleared only once the copy is safely on disk, or when
+        // there is no main file (nothing old-format left to preserve; keeping
+        // the flag would later copy v2 bytes under the pre-v<N> name).
         if self.pre_migration_copy_due {
             if let Some(previous) = &previous {
                 let copy = unique_path(
@@ -135,7 +139,9 @@ impl UnlockedVault {
                         now_unix_secs()
                     ),
                 )?;
-                write_synced(&copy, previous)?;
+                let copy_tmp = self.dir.join(PRE_MIGRATION_TMP_FILE);
+                write_synced(&copy_tmp, previous)?;
+                fs::rename(&copy_tmp, &copy)?;
             }
             self.pre_migration_copy_due = false;
         }

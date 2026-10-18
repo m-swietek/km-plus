@@ -14,7 +14,7 @@ Rejestr nazw nośnych: wartości, których zmiana psuje istniejące dane użytko
 | --- | --- | --- |
 | `kmplus.vault` (sejf główny) | `src-tauri/src/vault/mod.rs` (`VAULT_FILE`) | Istniejący sejf przestaje być widoczny; aplikacja proponuje ustawienie nowego hasła lub przywracanie kopii. |
 | `kmplus.vault.bak` (poprzednia dobra wersja) | `src-tauri/src/vault/mod.rs` (`BACKUP_FILE`) | Kopie zapisane przez starsze wersje nie są wykrywane — brak przywracania po uszkodzeniu. |
-| `kmplus.vault.tmp`, `kmplus.vault.bak.tmp` (pliki robocze zapisu atomowego) | `src-tauri/src/vault/mod.rs` (`TMP_FILE`, `BACKUP_TMP_FILE`) | Osierocone pliki robocze starszych wersji zostają w katalogu; brak utraty danych, ale niespójny katalog. |
+| `kmplus.vault.tmp`, `kmplus.vault.bak.tmp`, `kmplus.vault.pre.tmp` (pliki robocze zapisu atomowego) | `src-tauri/src/vault/mod.rs` (`TMP_FILE`, `BACKUP_TMP_FILE`, `PRE_MIGRATION_TMP_FILE`) | Osierocone pliki robocze starszych wersji zostają w katalogu; brak utraty danych, ale niespójny katalog. |
 | `kmplus.vault.damaged-<unix s>` (odłożony uszkodzony plik główny) | `src-tauri/src/vault/mod.rs` (`DAMAGED_PREFIX`) | Narzędzia i instrukcje odzyskiwania szukające tego wzorca przestają go znajdować. |
 | `kmplus.vault.pre-v<N>-<unix s>` (nietknięta kopia pliku głównego w starszym formacie ładunku, zapisywana przy pierwszym zapisie po migracji do formatu `N`; nigdy nie usuwana) | `src-tauri/src/vault/mod.rs` (`PRE_MIGRATION_PREFIX`) | Narzędzia i instrukcje odzyskiwania sprzed migracji przestają znajdować kopię. |
 
@@ -58,7 +58,7 @@ Rejestrowane w `src-tauri/src/lib.rs` (`generate_handler!`), zdefiniowane w `src
 | `vault_unlock` | `password` | `UnlockResult`: `unlocked`, `wrongPassword`, `damagedBackupAvailable` (+ `backupSavedAt`), `damagedNoBackup`, `tooNew` |
 | `vault_restore_backup` | `password` | `UnlockResult` (jak wyżej) |
 | `fuel_overview` | — | `FuelOverview` (bez `kind`): `{ startPoint: { date, odometerKm } \| null, lpg: LatestConsumption \| null, petrol: LatestConsumption \| null }`; `LatestConsumption` = `{ date, odometerKm, litresPer100Km, distanceKm, periodCostGrosze }` |
-| `set_start_point` | `date`, `odometerKm` | `SetStartPointResult`: `ok`, `alreadySet`, `invalid` (+ `reason`: `"invalidDate"` \| `"odometerOutOfRange"`) |
+| `set_start_point` | `date`, `odometerKm` | `SetStartPointResult`: `ok`, `alreadySet`, `invalid` (+ `reason`: `{ kind: "invalidDate" }` \| `{ kind: "odometerOutOfRange" }`) |
 | `add_fill_up` | `input`: `{ fuel: "lpg" \| "petrol", date, odometerKm, litresCl, amountGrosze, fullTank }` | `AddFillUpResult`: `saved` (+ `result`: `FillUpResult`), `noStartPoint`, `rejected` (+ `reason`: `FillUpRejection`) |
 
 Typy zagnieżdżone w `add_fill_up`:

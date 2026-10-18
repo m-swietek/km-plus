@@ -55,7 +55,7 @@ pub enum SetStartPointResult {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(tag = "kind", rename_all = "camelCase")]
 pub enum StartPointRejectionView {
     InvalidDate,
     OdometerOutOfRange,
@@ -380,14 +380,14 @@ mod tests {
                 reason: StartPointRejectionView::InvalidDate
             })
             .unwrap(),
-            json!({"kind": "invalid", "reason": "invalidDate"})
+            json!({"kind": "invalid", "reason": {"kind": "invalidDate"}})
         );
         assert_eq!(
             to_value(SetStartPointResult::Invalid {
                 reason: StartPointRejectionView::OdometerOutOfRange
             })
             .unwrap(),
-            json!({"kind": "invalid", "reason": "odometerOutOfRange"})
+            json!({"kind": "invalid", "reason": {"kind": "odometerOutOfRange"}})
         );
     }
 

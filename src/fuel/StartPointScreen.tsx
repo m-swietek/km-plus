@@ -51,7 +51,7 @@ export function StartPointScreen({ onDone }: Props) {
           onDone();
           return;
         case "invalid":
-          setRejection(result.reason);
+          setRejection(result.reason.kind);
           setConfirming(false);
           break;
       }
