@@ -1,9 +1,9 @@
 ---
 change_id: first-fillup-consumption
 title: Punkt startowy i pierwsze tankowanie ze spalaniem i kosztem
-status: implementing
+status: implemented
 created: 2026-10-11
-updated: 2026-10-12
+updated: 2026-10-18
 archived_at: null
 ---
 

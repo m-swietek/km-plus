@@ -426,11 +426,11 @@ Wydanie 0.1.4 istniejącym pipeline'em (pierwszy zielony przebieg bramki `cargo 
 
 #### Automated
 
-- [x] 4.1 Workflow wydania 0.1.4 kończy się sukcesem, krok „Rust tests” zielony: `gh run view <id>` na runie `release.yml`
-- [x] 4.2 Draft `app-v0.1.4` zawiera instalator, `.sig` i `latest.json`: `gh release view app-v0.1.4`
+- [x] 4.1 Workflow wydania 0.1.4 kończy się sukcesem, krok „Rust tests” zielony: `gh run view <id>` na runie `release.yml` — 45a1fae
+- [x] 4.2 Draft `app-v0.1.4` zawiera instalator, `.sig` i `latest.json`: `gh release view app-v0.1.4` — 45a1fae
 
 #### Manual
 
-- [x] 4.3 Przed aktualizacją: SHA-256 `%APPDATA%\io.github.m-swietek.kmplus\kmplus.vault` zanotowany na zainstalowanej 0.1.3
-- [x] 4.4 Aktualizacja 0.1.3 → 0.1.4 przez baner; to samo hasło odblokowuje; pokazuje się ekran punktu startowego; SHA-256 `kmplus.vault` po odblokowaniu bez zapisu identyczny jak przed aktualizacją
-- [x] 4.5 Po zapisie punktu startowego istnieje `kmplus.vault.pre-v2-<…>` o SHA-256 równym zanotowanemu sprzed aktualizacji; dodanie jednego tankowania do pełna pokazuje spalanie i koszt; po restarcie wynik nadal widoczny
+- [x] 4.3 Przed aktualizacją: SHA-256 `%APPDATA%\io.github.m-swietek.kmplus\kmplus.vault` zanotowany na zainstalowanej 0.1.3 — 45a1fae
+- [x] 4.4 Aktualizacja 0.1.3 → 0.1.4 przez baner; to samo hasło odblokowuje; pokazuje się ekran punktu startowego; SHA-256 `kmplus.vault` po odblokowaniu bez zapisu identyczny jak przed aktualizacją — 45a1fae
+- [x] 4.5 Po zapisie punktu startowego istnieje `kmplus.vault.pre-v2-<…>` o SHA-256 równym zanotowanemu sprzed aktualizacji; dodanie jednego tankowania do pełna pokazuje spalanie i koszt; po restarcie wynik nadal widoczny — 45a1fae
