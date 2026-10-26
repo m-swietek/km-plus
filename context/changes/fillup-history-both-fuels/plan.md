@@ -269,17 +269,17 @@ Brak zmiany formatu sejfu (pozostaje v2, `vault/data.rs:12`) — brak migratora 
 
 #### Automated
 
-- [x] 1.1 Testy domeny przechodzą: `cargo test fuel::tests` w `src-tauri/`
-- [x] 1.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
-- [x] 1.3 Brak ostrzeżeń kompilacji o martwym kodzie: `cargo check` w `src-tauri/`
+- [x] 1.1 Testy domeny przechodzą: `cargo test fuel::tests` w `src-tauri/` — 151309e
+- [x] 1.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/` — 151309e
+- [x] 1.3 Brak ostrzeżeń kompilacji o martwym kodzie: `cargo check` w `src-tauri/` — 151309e
 
 ### Phase 2: Kontrakt — rozszerzone `fuel_overview`
 
 #### Automated
 
-- [ ] 2.1 Testy kształtu JSON i komend przechodzą: `cargo test fuel::commands` w `src-tauri/`
-- [ ] 2.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
-- [ ] 2.3 Frontend kompiluje się z nowymi typami (AppShell dostosowany minimalnie, żeby build przechodził): `npm run build`
+- [x] 2.1 Testy kształtu JSON i komend przechodzą: `cargo test fuel::commands` w `src-tauri/`
+- [x] 2.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
+- [x] 2.3 Frontend kompiluje się z nowymi typami (AppShell dostosowany minimalnie, żeby build przechodził): `npm run build`
 
 ### Phase 3: UI — karty i listy historii
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { errorMessage } from "./vault/api";
-import { FUEL_LABELS, fuelOverview, type Fuel, type FuelOverview, type LatestConsumption } from "./fuel/api";
+import { FUEL_LABELS, fuelOverview, type Fuel, type FuelOverview, type FuelView } from "./fuel/api";
 import { formatConsumption, formatDate, formatKm } from "./fuel/format";
 import { FillUpForm } from "./fuel/FillUpForm";
 import { StartPointScreen } from "./fuel/StartPointScreen";
@@ -62,8 +62,8 @@ export function AppShell() {
         <section className="shell">
           <h1>kmPlus</h1>
           <div className="fuel-cards">
-            <FuelCard fuel="lpg" latest={overview.lpg} />
-            <FuelCard fuel="petrol" latest={overview.petrol} />
+            <FuelCard fuel="lpg" view={overview.lpg} />
+            <FuelCard fuel="petrol" view={overview.petrol} />
           </div>
           {/* Refreshing in place keeps the form mounted, so its fuel, date and result survive. */}
           <FillUpForm startPoint={overview.startPoint} onSaved={fetchOverview} onNoStartPoint={load} />
@@ -73,7 +73,8 @@ export function AppShell() {
   }
 }
 
-function FuelCard({ fuel, latest }: { fuel: Fuel; latest: LatestConsumption | null }) {
+function FuelCard({ fuel, view }: { fuel: Fuel; view: FuelView | null }) {
+  const latest = view?.summary.kind === "consumption" ? view.summary.latest : null;
   return (
     <div className="fuel-card">
       <h2>{FUEL_LABELS[fuel]}</h2>

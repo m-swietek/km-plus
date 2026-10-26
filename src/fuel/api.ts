@@ -15,10 +15,38 @@ export type LatestConsumption = {
   periodCostGrosze: number;
 };
 
+/** Average over every closed period of one fuel. */
+export type AverageConsumption = {
+  litresPer100Km: number;
+  distanceKm: number;
+  litresCl: number;
+  periods: number;
+};
+
+export type FuelSummaryView =
+  | { kind: "noEntries" }
+  | { kind: "noClosedPeriod" }
+  | { kind: "consumption"; latest: LatestConsumption; average: AverageConsumption };
+
+/** One fill-up in the per-fuel history (no `fuel` field — the list is per fuel). */
+export type HistoryRow = {
+  id: number;
+  date: string;
+  odometerKm: number;
+  litresCl: number;
+  amountGrosze: number;
+  fullTank: boolean;
+  result: FillUpResult;
+};
+
+/** `history` is newest (highest odometer) first. */
+export type FuelView = { summary: FuelSummaryView; history: HistoryRow[] };
+
+/** `lpg`/`petrol` are `null` exactly when `startPoint` is `null`. */
 export type FuelOverview = {
   startPoint: StartPointView | null;
-  lpg: LatestConsumption | null;
-  petrol: LatestConsumption | null;
+  lpg: FuelView | null;
+  petrol: FuelView | null;
 };
 
 export type StartPointRejection = "invalidDate" | "odometerOutOfRange";

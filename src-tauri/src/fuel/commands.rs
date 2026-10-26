@@ -11,8 +11,9 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use super::{
-    compute, fuel_reports, validate_fill_up, validate_start_point, Fuel, FillUpRejection,
-    FillUpResult, FuelReport, FuelSummary, NewFillUp, StartPoint, StartPointRejection,
+    compute, fuel_reports, validate_fill_up, validate_start_point, AverageConsumption, FillUp,
+    FillUpRejection, FillUpResult, Fuel, FuelReport, FuelSummary, NewFillUp, StartPoint,
+    StartPointRejection,
 };
 use crate::vault::commands::{lock_session, VaultSession};
 use crate::vault::{UnlockedVault, VaultData, VaultError};
@@ -23,8 +24,9 @@ const LOCKED_ERROR: &str = "dane są zablokowane; odblokuj aplikację";
 #[serde(rename_all = "camelCase")]
 pub struct FuelOverview {
     pub start_point: Option<StartPointView>,
-    pub lpg: Option<LatestConsumption>,
-    pub petrol: Option<LatestConsumption>,
+    /// `None` exactly when `start_point` is `None`.
+    pub lpg: Option<FuelView>,
+    pub petrol: Option<FuelView>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -44,6 +46,50 @@ pub struct LatestConsumption {
     pub litres_per_100km: f64,
     pub distance_km: u32,
     pub period_cost_grosze: u64,
+}
+
+/// Summary and history of one fuel.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FuelView {
+    pub summary: FuelSummaryView,
+    /// Newest (highest odometer) first.
+    pub history: Vec<HistoryRow>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+pub enum FuelSummaryView {
+    NoEntries,
+    NoClosedPeriod,
+    Consumption {
+        latest: LatestConsumption,
+        average: AverageConsumptionView,
+    },
+}
+
+/// Average over every closed period of one fuel (JSON type `AverageConsumption`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AverageConsumptionView {
+    #[serde(rename = "litresPer100Km")]
+    pub litres_per_100km: f64,
+    pub distance_km: u32,
+    pub litres_cl: u64,
+    pub periods: u32,
+}
+
+/// One fill-up in the per-fuel history, with its computed result.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryRow {
+    pub id: u64,
+    pub date: String,
+    pub odometer_km: u32,
+    pub litres_cl: u32,
+    pub amount_grosze: u64,
+    pub full_tank: bool,
+    pub result: FillUpResultView,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -161,6 +207,74 @@ impl From<FillUpResult> for FillUpResultView {
     }
 }
 
+impl From<AverageConsumption> for AverageConsumptionView {
+    fn from(a: AverageConsumption) -> Self {
+        Self {
+            litres_per_100km: a.litres_per_100km,
+            distance_km: a.distance_km,
+            litres_cl: a.litres_cl,
+            periods: a.periods,
+        }
+    }
+}
+
+impl From<FuelSummary> for FuelSummaryView {
+    fn from(s: FuelSummary) -> Self {
+        match s {
+            FuelSummary::NoEntries => Self::NoEntries,
+            FuelSummary::NoClosedPeriod => Self::NoClosedPeriod,
+            FuelSummary::Consumption {
+                latest:
+                    (
+                        fill_up,
+                        FillUpResult::Consumption {
+                            litres_per_100km,
+                            distance_km,
+                            period_cost_grosze,
+                            ..
+                        },
+                    ),
+                average,
+            } => Self::Consumption {
+                latest: LatestConsumption {
+                    date: fill_up.date,
+                    odometer_km: fill_up.odometer_km,
+                    litres_per_100km,
+                    distance_km,
+                    period_cost_grosze,
+                },
+                average: average.into(),
+            },
+            // The domain never pairs `latest` with a top-up; should it ever,
+            // showing no figure beats showing a wrong one.
+            FuelSummary::Consumption { .. } => Self::NoClosedPeriod,
+        }
+    }
+}
+
+impl From<(FillUp, FillUpResult)> for HistoryRow {
+    fn from((f, r): (FillUp, FillUpResult)) -> Self {
+        Self {
+            id: f.id,
+            date: f.date,
+            odometer_km: f.odometer_km,
+            litres_cl: f.litres_cl,
+            amount_grosze: f.amount_grosze,
+            full_tank: f.full_tank,
+            result: r.into(),
+        }
+    }
+}
+
+impl From<FuelReport> for FuelView {
+    fn from(r: FuelReport) -> Self {
+        Self {
+            summary: r.summary.into(),
+            history: r.history.into_iter().map(HistoryRow::from).collect(),
+        }
+    }
+}
+
 impl From<FillUpInput> for NewFillUp {
     fn from(i: FillUpInput) -> Self {
         NewFillUp {
@@ -174,7 +288,8 @@ impl From<FillUpInput> for NewFillUp {
     }
 }
 
-/// Start point and the latest consumption figure of each fuel.
+/// Start point and, per fuel, its summary (state, latest closed period,
+/// average) and history.
 #[tauri::command]
 pub async fn fuel_overview(session: State<'_, VaultSession>) -> Result<FuelOverview, String> {
     with_vault(&session, |vault| Ok(overview(&vault.data)))
@@ -219,37 +334,14 @@ fn overview(data: &VaultData) -> FuelOverview {
             petrol: None,
         };
     };
-    let latest = |report: FuelReport| match report.summary {
-        FuelSummary::Consumption {
-            latest:
-                (
-                    fill_up,
-                    FillUpResult::Consumption {
-                        litres_per_100km,
-                        distance_km,
-                        period_cost_grosze,
-                        ..
-                    },
-                ),
-            ..
-        } => Some(LatestConsumption {
-            date: fill_up.date,
-            odometer_km: fill_up.odometer_km,
-            litres_per_100km,
-            distance_km,
-            period_cost_grosze,
-        }),
-        // Only a closed period gives a figure; anything else shows nothing.
-        _ => None,
-    };
     let [(_, lpg), (_, petrol)] = fuel_reports(start, &data.fill_ups);
     FuelOverview {
         start_point: Some(StartPointView {
             date: start.date.clone(),
             odometer_km: start.odometer_km,
         }),
-        lpg: latest(lpg),
-        petrol: latest(petrol),
+        lpg: Some(lpg.into()),
+        petrol: Some(petrol.into()),
     }
 }
 
@@ -348,27 +440,155 @@ mod tests {
                 date: "2026-01-01".into(),
                 odometer_km: 100_000,
             }),
-            lpg: Some(LatestConsumption {
-                date: "2026-01-05".into(),
-                odometer_km: 100_400,
-                litres_per_100km: 10.0,
-                distance_km: 400,
-                period_cost_grosze: 12_000,
+            lpg: Some(FuelView {
+                summary: FuelSummaryView::Consumption {
+                    latest: LatestConsumption {
+                        date: "2026-01-05".into(),
+                        odometer_km: 100_400,
+                        litres_per_100km: 10.0,
+                        distance_km: 400,
+                        period_cost_grosze: 12_000,
+                    },
+                    average: AverageConsumptionView {
+                        litres_per_100km: 10.0,
+                        distance_km: 400,
+                        litres_cl: 4_000,
+                        periods: 1,
+                    },
+                },
+                history: vec![HistoryRow {
+                    id: 1,
+                    date: "2026-01-05".into(),
+                    odometer_km: 100_400,
+                    litres_cl: 4_000,
+                    amount_grosze: 12_000,
+                    full_tank: true,
+                    result: FillUpResultView::Consumption {
+                        litres_per_100km: 10.0,
+                        distance_km: 400,
+                        period_litres_cl: 4_000,
+                        period_cost_grosze: 12_000,
+                        price_per_litre_grosze: 300.0,
+                    },
+                }],
             }),
-            petrol: None,
+            petrol: Some(FuelView {
+                summary: FuelSummaryView::NoEntries,
+                history: vec![],
+            }),
         };
         assert_eq!(
             to_value(full).unwrap(),
             json!({
                 "startPoint": {"date": "2026-01-01", "odometerKm": 100_000},
                 "lpg": {
-                    "date": "2026-01-05",
-                    "odometerKm": 100_400,
-                    "litresPer100Km": 10.0,
-                    "distanceKm": 400,
-                    "periodCostGrosze": 12_000
+                    "summary": {
+                        "kind": "consumption",
+                        "latest": {
+                            "date": "2026-01-05",
+                            "odometerKm": 100_400,
+                            "litresPer100Km": 10.0,
+                            "distanceKm": 400,
+                            "periodCostGrosze": 12_000
+                        },
+                        "average": {
+                            "litresPer100Km": 10.0,
+                            "distanceKm": 400,
+                            "litresCl": 4_000,
+                            "periods": 1
+                        }
+                    },
+                    "history": [{
+                        "id": 1,
+                        "date": "2026-01-05",
+                        "odometerKm": 100_400,
+                        "litresCl": 4_000,
+                        "amountGrosze": 12_000,
+                        "fullTank": true,
+                        "result": {
+                            "kind": "consumption",
+                            "litresPer100Km": 10.0,
+                            "distanceKm": 400,
+                            "periodLitresCl": 4_000,
+                            "periodCostGrosze": 12_000,
+                            "pricePerLitreGrosze": 300.0
+                        }
+                    }]
                 },
-                "petrol": null
+                "petrol": {"summary": {"kind": "noEntries"}, "history": []}
+            })
+        );
+    }
+
+    #[test]
+    fn fuel_summary_view_serializes_to_frontend_shape() {
+        assert_eq!(
+            to_value(FuelSummaryView::NoEntries).unwrap(),
+            json!({"kind": "noEntries"})
+        );
+        assert_eq!(
+            to_value(FuelSummaryView::NoClosedPeriod).unwrap(),
+            json!({"kind": "noClosedPeriod"})
+        );
+    }
+
+    #[test]
+    fn history_rows_serialize_to_frontend_shape() {
+        let top_up = HistoryRow {
+            id: 7,
+            date: "2026-01-08".into(),
+            odometer_km: 100_600,
+            litres_cl: 1_000,
+            amount_grosze: 6_500,
+            full_tank: false,
+            result: FillUpResultView::TopUp {
+                price_per_litre_grosze: 650.0,
+            },
+        };
+        assert_eq!(
+            to_value(top_up).unwrap(),
+            json!({
+                "id": 7,
+                "date": "2026-01-08",
+                "odometerKm": 100_600,
+                "litresCl": 1_000,
+                "amountGrosze": 6_500,
+                "fullTank": false,
+                "result": {"kind": "topUp", "pricePerLitreGrosze": 650.0}
+            })
+        );
+        let full = HistoryRow {
+            id: 8,
+            date: "2026-01-09".into(),
+            odometer_km: 100_800,
+            litres_cl: 5_000,
+            amount_grosze: 32_500,
+            full_tank: true,
+            result: FillUpResultView::Consumption {
+                litres_per_100km: 7.5,
+                distance_km: 800,
+                period_litres_cl: 6_000,
+                period_cost_grosze: 39_000,
+                price_per_litre_grosze: 650.0,
+            },
+        };
+        assert_eq!(
+            to_value(full).unwrap(),
+            json!({
+                "id": 8,
+                "date": "2026-01-09",
+                "odometerKm": 100_800,
+                "litresCl": 5_000,
+                "amountGrosze": 32_500,
+                "fullTank": true,
+                "result": {
+                    "kind": "consumption",
+                    "litresPer100Km": 7.5,
+                    "distanceKm": 800,
+                    "periodLitresCl": 6_000,
+                    "periodCostGrosze": 39_000,
+                    "pricePerLitreGrosze": 650.0
+                }
             })
         );
     }
@@ -566,7 +786,15 @@ mod tests {
                 }
             }
         );
-        assert_eq!(overview(&vault.data).lpg, None);
+        let after_top_up = overview(&vault.data);
+        assert_eq!(
+            after_top_up.lpg.map(|v| v.summary),
+            Some(FuelSummaryView::NoClosedPeriod)
+        );
+        assert_eq!(
+            after_top_up.petrol.map(|v| v.summary),
+            Some(FuelSummaryView::NoEntries)
+        );
 
         assert_eq!(
             apply_fill_up(&mut vault, lpg("2026-01-05", 100_400, true)).unwrap(),
@@ -591,14 +819,55 @@ mod tests {
                     date: "2026-01-01".into(),
                     odometer_km: 100_000
                 }),
-                lpg: Some(LatestConsumption {
-                    date: "2026-01-05".into(),
-                    odometer_km: 100_400,
-                    litres_per_100km: 20.0,
-                    distance_km: 400,
-                    period_cost_grosze: 24_000,
+                lpg: Some(FuelView {
+                    summary: FuelSummaryView::Consumption {
+                        latest: LatestConsumption {
+                            date: "2026-01-05".into(),
+                            odometer_km: 100_400,
+                            litres_per_100km: 20.0,
+                            distance_km: 400,
+                            period_cost_grosze: 24_000,
+                        },
+                        average: AverageConsumptionView {
+                            litres_per_100km: 20.0,
+                            distance_km: 400,
+                            litres_cl: 8_000,
+                            periods: 1,
+                        },
+                    },
+                    history: vec![
+                        HistoryRow {
+                            id: 2,
+                            date: "2026-01-05".into(),
+                            odometer_km: 100_400,
+                            litres_cl: 4_000,
+                            amount_grosze: 12_000,
+                            full_tank: true,
+                            result: FillUpResultView::Consumption {
+                                litres_per_100km: 20.0,
+                                distance_km: 400,
+                                period_litres_cl: 8_000,
+                                period_cost_grosze: 24_000,
+                                price_per_litre_grosze: 300.0,
+                            },
+                        },
+                        HistoryRow {
+                            id: 1,
+                            date: "2026-01-03".into(),
+                            odometer_km: 100_200,
+                            litres_cl: 4_000,
+                            amount_grosze: 12_000,
+                            full_tank: false,
+                            result: FillUpResultView::TopUp {
+                                price_per_litre_grosze: 300.0
+                            },
+                        },
+                    ],
                 }),
-                petrol: None,
+                petrol: Some(FuelView {
+                    summary: FuelSummaryView::NoEntries,
+                    history: vec![],
+                }),
             }
         );
     }
