@@ -224,21 +224,99 @@ pub fn compute(start: &StartPoint, fill_ups: &[FillUp]) -> Vec<(u64, FillUpResul
         .collect()
 }
 
-/// The full-tank fill-up of `fuel` with the highest odometer, with its result.
-pub fn latest_consumption(
-    start: &StartPoint,
-    fill_ups: &[FillUp],
-    fuel: Fuel,
-) -> Option<(FillUp, FillUpResult)> {
-    let latest = fill_ups
+/// Current consumption of one fuel. Built only from `Consumption` results,
+/// never from the entry flags, so a fuel without a closed period shows no
+/// figure at all.
+#[derive(Debug, Clone, PartialEq)]
+pub enum FuelSummary {
+    /// The fuel has no entry at all.
+    NoEntries,
+    /// There are entries, but none of them closed a consumption period.
+    NoClosedPeriod,
+    Consumption {
+        /// The entry with the highest `(odometer_km, id)` among those whose
+        /// result is `Consumption`, with that result (always `Consumption`).
+        latest: (FillUp, FillUpResult),
+        average: AverageConsumption,
+    },
+}
+
+/// Average over every closed period of one fuel, i.e. from the start point
+/// to the latest closed period. Top-ups after the latest full tank belong to
+/// no closed period yet and do not count.
+#[derive(Debug, Clone, PartialEq)]
+pub struct AverageConsumption {
+    pub litres_per_100km: f64,
+    pub distance_km: u32,
+    pub litres_cl: u64,
+    pub periods: u32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FuelReport {
+    pub summary: FuelSummary,
+    /// Every entry of the fuel with its result, newest (highest odometer)
+    /// first.
+    pub history: Vec<(FillUp, FillUpResult)>,
+}
+
+/// Summary and history of both fuels, LPG first, from a single `compute`, so
+/// every figure shown comes from the same results.
+pub fn fuel_reports(start: &StartPoint, fill_ups: &[FillUp]) -> [(Fuel, FuelReport); 2] {
+    let results = compute(start, fill_ups);
+    [Fuel::Lpg, Fuel::Petrol].map(|fuel| (fuel, fuel_report(fuel, fill_ups, &results)))
+}
+
+/// `results` must be the output of `compute` for `fill_ups` (same order).
+fn fuel_report(fuel: Fuel, fill_ups: &[FillUp], results: &[(u64, FillUpResult)]) -> FuelReport {
+    let mut history: Vec<(FillUp, FillUpResult)> = fill_ups
         .iter()
-        .filter(|f| f.fuel == fuel && f.full_tank)
-        .max_by_key(|f| (f.odometer_km, f.id))?;
-    let result = compute(start, fill_ups)
-        .into_iter()
-        .find(|(id, _)| *id == latest.id)
-        .map(|(_, r)| r)?;
-    Some((latest.clone(), result))
+        .zip(results)
+        .filter(|(f, _)| f.fuel == fuel)
+        .map(|(f, (_, r))| (f.clone(), r.clone()))
+        .collect();
+    history.sort_by_key(|(f, _)| std::cmp::Reverse((f.odometer_km, f.id)));
+    if history.is_empty() {
+        return FuelReport {
+            summary: FuelSummary::NoEntries,
+            history,
+        };
+    }
+
+    let mut distance_km: u32 = 0;
+    let mut litres_cl: u64 = 0;
+    let mut periods: u32 = 0;
+    for (_, r) in &history {
+        if let FillUpResult::Consumption {
+            distance_km: d,
+            period_litres_cl: l,
+            ..
+        } = r
+        {
+            distance_km += d;
+            litres_cl += l;
+            periods += 1;
+        }
+    }
+    let latest = history
+        .iter()
+        .find(|(_, r)| matches!(r, FillUpResult::Consumption { .. }))
+        .cloned();
+    let summary = match latest {
+        None => FuelSummary::NoClosedPeriod,
+        // At least one closed period, each with distance > 0.
+        Some(latest) => FuelSummary::Consumption {
+            latest,
+            average: AverageConsumption {
+                // litres / km * 100 == centilitres / km
+                litres_per_100km: litres_cl as f64 / f64::from(distance_km),
+                distance_km,
+                litres_cl,
+                periods,
+            },
+        },
+    };
+    FuelReport { summary, history }
 }
 
 /// Price per litre in grosze: amount / (centilitres / 100).

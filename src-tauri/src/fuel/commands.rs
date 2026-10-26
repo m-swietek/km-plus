@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use super::{
-    compute, latest_consumption, validate_fill_up, validate_start_point, Fuel, FillUpRejection,
-    FillUpResult, NewFillUp, StartPoint, StartPointRejection,
+    compute, fuel_reports, validate_fill_up, validate_start_point, Fuel, FillUpRejection,
+    FillUpResult, FuelReport, FuelSummary, NewFillUp, StartPoint, StartPointRejection,
 };
 use crate::vault::commands::{lock_session, VaultSession};
 use crate::vault::{UnlockedVault, VaultData, VaultError};
@@ -219,32 +219,37 @@ fn overview(data: &VaultData) -> FuelOverview {
             petrol: None,
         };
     };
-    let latest = |fuel| {
-        let (fill_up, result) = latest_consumption(start, &data.fill_ups, fuel)?;
+    let latest = |report: FuelReport| match report.summary {
+        FuelSummary::Consumption {
+            latest:
+                (
+                    fill_up,
+                    FillUpResult::Consumption {
+                        litres_per_100km,
+                        distance_km,
+                        period_cost_grosze,
+                        ..
+                    },
+                ),
+            ..
+        } => Some(LatestConsumption {
+            date: fill_up.date,
+            odometer_km: fill_up.odometer_km,
+            litres_per_100km,
+            distance_km,
+            period_cost_grosze,
+        }),
         // Only a closed period gives a figure; anything else shows nothing.
-        match result {
-            FillUpResult::Consumption {
-                litres_per_100km,
-                distance_km,
-                period_cost_grosze,
-                ..
-            } => Some(LatestConsumption {
-                date: fill_up.date,
-                odometer_km: fill_up.odometer_km,
-                litres_per_100km,
-                distance_km,
-                period_cost_grosze,
-            }),
-            FillUpResult::TopUp { .. } => None,
-        }
+        _ => None,
     };
+    let [(_, lpg), (_, petrol)] = fuel_reports(start, &data.fill_ups);
     FuelOverview {
         start_point: Some(StartPointView {
             date: start.date.clone(),
             odometer_km: start.odometer_km,
         }),
-        lpg: latest(Fuel::Lpg),
-        petrol: latest(Fuel::Petrol),
+        lpg: latest(lpg),
+        petrol: latest(petrol),
     }
 }
 

@@ -92,6 +92,44 @@ fn assert_top_up(result: &FillUpResult, price_per_litre_grosze: f64) {
     }
 }
 
+fn report_of(reports: &[(Fuel, FuelReport); 2], fuel: Fuel) -> &FuelReport {
+    &reports
+        .iter()
+        .find(|(f, _)| *f == fuel)
+        .unwrap_or_else(|| panic!("no report for {fuel:?}"))
+        .1
+}
+
+fn history_ids(report: &FuelReport) -> Vec<u64> {
+    report.history.iter().map(|(f, _)| f.id).collect()
+}
+
+/// The latest closed period and the average of a `Consumption` summary.
+#[track_caller]
+fn consumption_summary(report: &FuelReport) -> (&FillUp, &FillUpResult, &AverageConsumption) {
+    match &report.summary {
+        FuelSummary::Consumption {
+            latest: (fill_up, result),
+            average,
+        } => (fill_up, result, average),
+        other => panic!("expected Consumption, got {other:?}"),
+    }
+}
+
+#[track_caller]
+fn assert_average(
+    average: &AverageConsumption,
+    litres_per_100km: f64,
+    distance_km: u32,
+    litres_cl: u64,
+    periods: u32,
+) {
+    assert_close(average.litres_per_100km, litres_per_100km, "average l/100 km");
+    assert_eq!(average.distance_km, distance_km, "average distance");
+    assert_eq!(average.litres_cl, litres_cl, "average litres");
+    assert_eq!(average.periods, periods, "periods");
+}
+
 /// The "Próbka wyroczni" table from the plan; ids equal the row numbers.
 fn oracle_sample() -> Vec<FillUp> {
     use Fuel::{Lpg, Petrol};
@@ -155,12 +193,36 @@ fn oracle_sample_matches_hand_computed_results() {
     assert_eq!(format!("{:.2}", 1_277.0_f64 / 1_400.0), "0.91");
     assert_eq!(format!("{:.2}", 5_128.0_f64 / 777.0), "6.60");
 
-    let (lpg, lpg_result) = latest_consumption(&start(), &fill_ups, Fuel::Lpg).unwrap();
-    assert_eq!(lpg.id, 9);
-    assert_eq!(&lpg_result, r(9));
-    let (petrol, petrol_result) = latest_consumption(&start(), &fill_ups, Fuel::Petrol).unwrap();
-    assert_eq!(petrol.id, 10);
-    assert_eq!(&petrol_result, r(10));
+    let reports = fuel_reports(&start(), &fill_ups);
+    assert_eq!(reports[0].0, Fuel::Lpg);
+    assert_eq!(reports[1].0, Fuel::Petrol);
+
+    // LPG: periods closed by 1, 4, 6, 9 (400 + 500 + 450 + 660 km).
+    let lpg = report_of(&reports, Fuel::Lpg);
+    let (latest, latest_result, average) = consumption_summary(lpg);
+    assert_eq!(latest.id, 9);
+    assert_eq!(latest_result, r(9));
+    assert_average(average, 17_335.0 / 2_010.0, 2_010, 17_335, 4);
+    assert_eq!(history_ids(lpg), [9, 8, 6, 4, 3, 1]);
+
+    // Petrol: periods closed by 5 and 10 (900 + 1 400 km).
+    let petrol = report_of(&reports, Fuel::Petrol);
+    let (latest, latest_result, average) = consumption_summary(petrol);
+    assert_eq!(latest.id, 10);
+    assert_eq!(latest_result, r(10));
+    assert_average(average, 5_277.0 / 2_300.0, 2_300, 5_277, 2);
+    assert_eq!(history_ids(petrol), [10, 7, 5, 2]);
+
+    assert_eq!(format!("{:.4}", 17_335.0_f64 / 2_010.0), "8.6244");
+    assert_eq!(format!("{:.4}", 5_277.0_f64 / 2_300.0), "2.2943");
+
+    // Every history row is the stored entry with its own `compute` result.
+    for (_, report) in &reports {
+        for (f, result) in &report.history {
+            assert_eq!(Some(f), sample.iter().find(|s| s.id == f.id));
+            assert_eq!(result, r(f.id), "entry {}", f.id);
+        }
+    }
 }
 
 #[test]
@@ -183,7 +245,9 @@ fn top_up_never_gives_consumption() {
     assert_top_up(result_of(&results, 1), 300.0);
     assert_top_up(result_of(&results, 2), 300.0);
     assert_top_up(result_of(&results, 3), 650.0);
-    assert_eq!(latest_consumption(&start(), &fill_ups, Fuel::Lpg), None);
+    let reports = fuel_reports(&start(), &fill_ups);
+    assert_eq!(report_of(&reports, Fuel::Lpg).summary, FuelSummary::NoClosedPeriod);
+    assert_eq!(report_of(&reports, Fuel::Petrol).summary, FuelSummary::NoClosedPeriod);
 }
 
 #[test]
@@ -264,31 +328,110 @@ fn zero_distance_never_divides() {
 }
 
 #[test]
-fn latest_consumption_is_highest_odometer_full_fill_up() {
+fn report_latest_is_highest_odometer_closed_period() {
     // Inserted out of order; a later top-up must not hide the full tank.
-    let fill_ups = [
+    let mut fill_ups = vec![
         entry(3, Fuel::Lpg, "2026-01-08", 100_900, 2_000, 6_000, true),
         entry(1, Fuel::Lpg, "2026-01-03", 100_400, 4_000, 12_000, true),
-        entry(4, Fuel::Lpg, "2026-01-09", 101_000, 500, 1_500, false),
         entry(2, Fuel::Petrol, "2026-01-10", 101_200, 1_000, 6_500, true),
     ];
-    let (latest, result) = latest_consumption(&start(), &fill_ups, Fuel::Lpg).unwrap();
-    assert_eq!(latest.id, 3);
-    assert_consumption(&result, 4.0, 500, 2_000, 6_000, 300.0);
+    let before = fuel_reports(&start(), &fill_ups);
+    fill_ups.push(entry(4, Fuel::Lpg, "2026-01-09", 101_000, 500, 1_500, false));
+    let reports = fuel_reports(&start(), &fill_ups);
 
-    let (latest, _) = latest_consumption(&start(), &fill_ups, Fuel::Petrol).unwrap();
+    let lpg = report_of(&reports, Fuel::Lpg);
+    let (latest, result, average) = consumption_summary(lpg);
+    assert_eq!(latest.id, 3);
+    assert_consumption(result, 4.0, 500, 2_000, 6_000, 300.0);
+    // 40 + 20 l over 400 + 500 km; the 5 l top-up after entry 3 is left out.
+    assert_average(average, 6_000.0 / 900.0, 900, 6_000, 2);
+    // The top-up after the last full tank changes neither latest nor average.
+    assert_eq!(lpg.summary, report_of(&before, Fuel::Lpg).summary);
+    // ...but it is in the history, newest first.
+    assert_eq!(history_ids(lpg), [4, 3, 1]);
+
+    let (latest, _, _) = consumption_summary(report_of(&reports, Fuel::Petrol));
     assert_eq!(latest.id, 2);
 }
 
 #[test]
-fn latest_consumption_none_with_only_top_ups() {
-    assert_eq!(latest_consumption(&start(), &[], Fuel::Lpg), None);
+fn report_no_closed_period_with_only_top_ups() {
     let fill_ups = [
         entry(1, Fuel::Lpg, "2026-01-03", 100_300, 2_000, 6_000, false),
         entry(2, Fuel::Petrol, "2026-01-04", 100_400, 1_000, 6_500, true),
     ];
-    assert_eq!(latest_consumption(&start(), &fill_ups, Fuel::Lpg), None);
-    assert!(latest_consumption(&start(), &fill_ups, Fuel::Petrol).is_some());
+    let reports = fuel_reports(&start(), &fill_ups);
+    let lpg = report_of(&reports, Fuel::Lpg);
+    assert_eq!(lpg.summary, FuelSummary::NoClosedPeriod);
+    assert_eq!(history_ids(lpg), [1]);
+    let (latest, _, _) = consumption_summary(report_of(&reports, Fuel::Petrol));
+    assert_eq!(latest.id, 2);
+}
+
+#[test]
+fn report_no_entries() {
+    for (_, report) in &fuel_reports(&start(), &[]) {
+        assert_eq!(report.summary, FuelSummary::NoEntries);
+        assert!(report.history.is_empty());
+    }
+
+    // Only the other fuel has entries.
+    let fill_ups = [entry(1, Fuel::Lpg, "2026-01-03", 100_400, 4_000, 12_000, true)];
+    let reports = fuel_reports(&start(), &fill_ups);
+    let petrol = report_of(&reports, Fuel::Petrol);
+    assert_eq!(petrol.summary, FuelSummary::NoEntries);
+    assert!(petrol.history.is_empty());
+    consumption_summary(report_of(&reports, Fuel::Lpg));
+}
+
+#[test]
+fn report_single_closed_period_average_equals_latest() {
+    let fill_ups = [
+        entry(1, Fuel::Petrol, "2026-01-03", 100_200, 1_000, 6_500, false),
+        entry(2, Fuel::Petrol, "2026-01-05", 100_500, 2_500, 16_250, true),
+    ];
+    let reports = fuel_reports(&start(), &fill_ups);
+    let (latest, result, average) = consumption_summary(report_of(&reports, Fuel::Petrol));
+    assert_eq!(latest.id, 2);
+    assert_consumption(result, 7.0, 500, 3_500, 22_750, 650.0);
+    assert_average(average, 7.0, 500, 3_500, 1);
+}
+
+#[test]
+fn backdated_entry_changes_average_and_history_order() {
+    let mut fill_ups = vec![
+        entry(1, Fuel::Lpg, "2026-01-05", 100_400, 4_000, 12_000, true),
+        entry(2, Fuel::Lpg, "2026-01-20", 101_000, 4_800, 14_400, true),
+    ];
+    let before = fuel_reports(&start(), &fill_ups);
+    let lpg = report_of(&before, Fuel::Lpg);
+    let (latest, result, average) = consumption_summary(lpg);
+    assert_eq!(latest.id, 2);
+    assert_consumption(result, 8.0, 600, 4_800, 14_400, 300.0);
+    assert_average(average, 8.8, 1_000, 8_800, 2);
+    assert_eq!(history_ids(lpg), [2, 1]);
+
+    // A forgotten receipt from between entries 1 and 2.
+    let backdated = NewFillUp {
+        fuel: Fuel::Lpg,
+        date: "2026-01-10".into(),
+        odometer_km: 100_700,
+        litres_cl: 2_400,
+        amount_grosze: 7_200,
+        full_tank: true,
+    };
+    assert_eq!(validate_fill_up(&start(), &fill_ups, &backdated), Ok(()));
+    fill_ups.push(backdated.with_id(3));
+
+    let after = fuel_reports(&start(), &fill_ups);
+    let lpg = report_of(&after, Fuel::Lpg);
+    let (latest, result, average) = consumption_summary(lpg);
+    // Entry 2's period now starts at 100 700 and only covers 300 km.
+    assert_eq!(latest.id, 2);
+    assert_consumption(result, 16.0, 300, 4_800, 14_400, 300.0);
+    assert_average(average, 11.2, 1_000, 11_200, 3);
+    assert_eq!(history_ids(lpg), [2, 3, 1]);
+    assert_consumption(&lpg.history[1].1, 8.0, 300, 2_400, 7_200, 300.0);
 }
 
 #[test]
