@@ -46,6 +46,11 @@ export function formatConsumption(litresPer100Km: number): string {
   return `${TWO_PLACES.format(litresPer100Km)} l/100 km`;
 }
 
+/** Centilitres → `"46,35 l"`. */
+export function formatLitres(centilitres: number): string {
+  return `${TWO_PLACES.format(centilitres / 100)} l`;
+}
+
 /** Grosze → `"137,00 zł"`. */
 export function formatMoney(grosze: number): string {
   return `${TWO_PLACES.format(grosze / 100)} zł`;

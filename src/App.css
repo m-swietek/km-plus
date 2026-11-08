@@ -134,7 +134,8 @@ button:focus-visible {
 }
 
 .fuel-card h2,
-.fill-up h2 {
+.fill-up h2,
+.fuel-history h2 {
   margin: 0 0 0.25em;
   font-size: 1.1em;
 }
@@ -196,6 +197,54 @@ input[type="checkbox"] {
   font-weight: 600;
 }
 
+.fuel-histories {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1em;
+  margin: 1.5em 0;
+}
+
+.fuel-history {
+  min-width: 0;
+  padding: 0.75em 1em;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+  text-align: left;
+}
+
+.fuel-history p {
+  margin: 0;
+}
+
+.fuel-history-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.fuel-history-row {
+  padding: 0.5em 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.fuel-history-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.fuel-history-head {
+  font-weight: 600;
+}
+
+@media (max-width: 30em) {
+  .fuel-histories {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;
@@ -220,7 +269,12 @@ input[type="checkbox"] {
     color: #ff8a80;
   }
 
-  .fuel-card {
+  .fuel-card,
+  .fuel-history {
     background-color: #0f0f0f98;
+  }
+
+  .fuel-history-row {
+    border-top-color: rgba(255, 255, 255, 0.15);
   }
 }

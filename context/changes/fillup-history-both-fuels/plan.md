@@ -277,24 +277,24 @@ Brak zmiany formatu sejfu (pozostaje v2, `vault/data.rs:12`) — brak migratora 
 
 #### Automated
 
-- [x] 2.1 Testy kształtu JSON i komend przechodzą: `cargo test fuel::commands` w `src-tauri/`
-- [x] 2.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
-- [x] 2.3 Frontend kompiluje się z nowymi typami (AppShell dostosowany minimalnie, żeby build przechodził): `npm run build`
+- [x] 2.1 Testy kształtu JSON i komend przechodzą: `cargo test fuel::commands` w `src-tauri/` — c419442
+- [x] 2.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/` — c419442
+- [x] 2.3 Frontend kompiluje się z nowymi typami (AppShell dostosowany minimalnie, żeby build przechodził): `npm run build` — c419442
 
 ### Phase 3: UI — karty i listy historii
 
 #### Automated
 
-- [ ] 3.1 Frontend kompiluje się bez nieużywanych importów: `npm run build`
-- [ ] 3.2 Testy backendu nadal przechodzą: `cargo test` w `src-tauri/`
+- [x] 3.1 Frontend kompiluje się bez nieużywanych importów: `npm run build`
+- [x] 3.2 Testy backendu nadal przechodzą: `cargo test` w `src-tauri/`
 
 #### Manual
 
-- [ ] 3.3 `npm run tauri dev` na czystym katalogu danych (prawdziwy `kmplus.vault` przeniesiony na bok przed testem i przywrócony po nim): po punkcie startowym (2026-01-01, 100 000 km) obie karty pokazują „Brak wpisów”, obie listy „Brak tankowań”
-- [ ] 3.4 Po dolewce LPG (2026-01-03, 100 200 km, 20 l, 60 zł): karta Gaz „Brak wyniku — potrzebne tankowanie do pełna”, karta Benzyna nadal „Brak wpisów”; lista Gaz ma wiersz „dolewka” bez spalania
-- [ ] 3.5 Po pełnym LPG (2026-01-05, 100 400 km, 20 l, 60 zł): karta Gaz 10,00 l/100 km i „średnio od startu: 10,00 l/100 km na 400 km”; lista Gaz ma pełny wiersz na górze ze spalaniem 10,00 l/100 km, dystansem 400 km i kosztem okresu 120,00 zł
-- [ ] 3.6 Po pełnej benzynie (2026-01-06, 100 500 km, 5 l, 32,50 zł) i pełnym LPG (2026-01-10, 100 900 km, 45 l, 135 zł): karta Benzyna 1,00 l/100 km na 500 km; karta Gaz 9,00 l/100 km i średnia 9,44 l/100 km na 900 km; wpisy benzyny nie pojawiają się w liście Gaz
-- [ ] 3.7 Karty i listy aktualizują się po każdym zapisie bez przeładowania; po restarcie i odblokowaniu widok identyczny; tryb ciemny czytelny
+- [x] 3.3 `npm run tauri dev` na czystym katalogu danych (prawdziwy `kmplus.vault` przeniesiony na bok przed testem i przywrócony po nim): po punkcie startowym (2026-01-01, 100 000 km) obie karty pokazują „Brak wpisów”, obie listy „Brak tankowań”
+- [x] 3.4 Po dolewce LPG (2026-01-03, 100 200 km, 20 l, 60 zł): karta Gaz „Brak wyniku — potrzebne tankowanie do pełna”, karta Benzyna nadal „Brak wpisów”; lista Gaz ma wiersz „dolewka” bez spalania
+- [x] 3.5 Po pełnym LPG (2026-01-05, 100 400 km, 20 l, 60 zł): karta Gaz 10,00 l/100 km i „średnio od startu: 10,00 l/100 km na 400 km”; lista Gaz ma pełny wiersz na górze ze spalaniem 10,00 l/100 km, dystansem 400 km i kosztem okresu 120,00 zł
+- [x] 3.6 Po pełnej benzynie (2026-01-06, 100 500 km, 5 l, 32,50 zł) i pełnym LPG (2026-01-10, 100 900 km, 45 l, 135 zł): karta Benzyna 1,00 l/100 km na 500 km; karta Gaz 9,00 l/100 km i średnia 9,44 l/100 km na 900 km; wpisy benzyny nie pojawiają się w liście Gaz
+- [x] 3.7 Karty i listy aktualizują się po każdym zapisie bez przeładowania; po restarcie i odblokowaniu widok identyczny; tryb ciemny czytelny
 
 ### Phase 4: Wydanie 0.1.5
 
