@@ -22,3 +22,9 @@ archived_at: null
 - Po aktualizacji 0.1.4 → 0.1.5 przez baner i odblokowaniu tym samym hasłem bez zapisu: `kmplus.vault` SHA-256 `88f8e1a2…c5d0` (identyczny), mtime bez zmian; brak nowego pliku `pre-v*` (w katalogu tylko `kmplus.vault`, `kmplus.vault.bak` i istniejący `kmplus.vault.pre-v2-1792319089`). Zainstalowana wersja w rejestrze deinstalacji: 0.1.5 (`%LOCALAPPDATA%\km-plus`).
 - Istniejące tankowania widoczne w listach historii z wynikami, karty pokazują ostatni okres i średnią (potwierdzenie użytkownika, 2026-11-08).
 - Przed wydaniem w katalogu danych nadal leżał testowy sejf z ręcznego testu Fazy 3 (683 B); prawdziwe pliki leżały w `Downloads\backup` (SHA-256 zgodne z dowodem S-02). 2026-11-08 testowy katalog przemianowany na `io.github.m-swietek.kmplus.test-s03`, prawdziwe pliki skopiowane z powrotem (hashe zweryfikowane) — dopiero potem zanotowano stan sprzed aktualizacji.
+
+## Wydanie 0.1.6 (poprawki z impl-review)
+
+- Poprawki F1, F3, F4 z `reviews/impl-review.md` (commit `a5043cf`), wersja podbita w `22a1164`.
+- Run `release.yml` 42503307560 (2026-11-08): sukces, krok „Rust tests” zielony; `km-plus_0.1.6_x64-setup.exe` (2 331 954 B, SHA-256 `957bbd86534065d1c373b878e1c1baa18682f0ce56b2c2c1246b8643b17dd1e0`), `.sig`, `latest.json` (wersja 0.1.6, podpis zgodny z `.sig`). Opublikowany ręcznie 2026-11-08 17:12:31 UTC; publiczny `latest.json` serwuje 0.1.6.
+- Aktualizacja 0.1.5 → 0.1.6 przez baner, odblokowanie bez zapisu: `kmplus.vault` SHA-256 `88f8e1a2…c5d0` przed i po (mtime 2026-10-18 bez zmian), brak nowego `pre-v*`; zainstalowana 0.1.6. Nagłówki „Historia — Gaz/Benzyna” i jedna kolumna przy wąskim oknie potwierdzone przez użytkownika.
