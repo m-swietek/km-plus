@@ -7,6 +7,7 @@
 //! entered: they are not compared with the start point, the fill-ups or
 //! today's date.
 
+pub mod commands;
 #[cfg(test)]
 mod tests;
 

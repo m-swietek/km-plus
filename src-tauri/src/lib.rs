@@ -1,13 +1,11 @@
 mod fuel;
-// Used only by the vault payload and tests until the service Tauri commands
-// land (Phase 2 of plan-service); drop the allow then.
-#[allow(dead_code)]
 mod service;
 mod vault;
 
 use fuel::commands::{
     add_fill_up, update_fill_up, delete_fill_up, fuel_overview, set_start_point,
 };
+use service::commands::{add_service, delete_service, service_register, update_service};
 use vault::commands::{
     vault_restore_backup, vault_setup, vault_status, vault_unlock, VaultSession,
 };
@@ -27,7 +25,11 @@ pub fn run() {
             set_start_point,
             add_fill_up,
             update_fill_up,
-            delete_fill_up
+            delete_fill_up,
+            service_register,
+            add_service,
+            update_service,
+            delete_service
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

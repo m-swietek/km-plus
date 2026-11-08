@@ -59,7 +59,7 @@ Jawny ładunek JSON v3 wewnątrz sejfu (`src-tauri/src/vault/data.rs`, `VaultDat
 
 ## Tauri commands
 
-Rejestrowane w `src-tauri/src/lib.rs` (`generate_handler!`), zdefiniowane w `src-tauri/src/vault/commands.rs` (sejf) i `src-tauri/src/fuel/commands.rs` (paliwa). Kształty wyników są unią z polem `kind` (serde `tag = "kind"`, camelCase); czasy w milisekundach epoki; jednostki paliw jak w „Vault payload” (km, centylitry, grosze, `YYYY-MM-DD`), wartości liczone (`litresPer100Km`, `pricePerLitreGrosze`) to liczby zmiennoprzecinkowe bez zaokrąglenia. Zmiana nazwy komendy, wartości `kind` lub nazwy pola psuje frontend w czasie działania (brak kontroli przy kompilacji).
+Rejestrowane w `src-tauri/src/lib.rs` (`generate_handler!`), zdefiniowane w `src-tauri/src/vault/commands.rs` (sejf), `src-tauri/src/fuel/commands.rs` (paliwa) i `src-tauri/src/service/commands.rs` (serwisy). Kształty wyników są unią z polem `kind` (serde `tag = "kind"`, camelCase); czasy w milisekundach epoki; jednostki paliw jak w „Vault payload” (km, centylitry, grosze, `YYYY-MM-DD`), wartości liczone (`litresPer100Km`, `pricePerLitreGrosze`) to liczby zmiennoprzecinkowe bez zaokrąglenia. Zmiana nazwy komendy, wartości `kind` lub nazwy pola psuje frontend w czasie działania (brak kontroli przy kompilacji).
 
 | Komenda | Argumenty | Wynik (`kind`) |
 | --- | --- | --- |
@@ -80,4 +80,20 @@ Typy zagnieżdżone w `add_fill_up` i `update_fill_up` (wspólne dla obu komend)
 - `FillUpResult`: `consumption` (+ `litresPer100Km`, `distanceKm`, `periodLitresCl`, `periodCostGrosze`, `pricePerLitreGrosze`), `topUp` (+ `pricePerLitreGrosze`).
 - `FillUpRejection`: `invalidDate`, `odometerOutOfRange`, `litresOutOfRange`, `amountOutOfRange`, `dateBeforeStart`, `odometerNotAfterStart`, `sameFuelSameOdometer` (+ `date`), `orderConflict` (+ `date`, `odometerKm`).
 
-Błąd (`Err`) każdej komendy to czytelny komunikat po polsku, nigdy nie zawierający hasła. Komendy paliwowe bez odblokowanej sesji zwracają `Err("dane są zablokowane; odblokuj aplikację")`.
+Komendy serwisów (jednostki jak w „Vault payload”: km, miesiące, `YYYY-MM-DD`; nie wymagają punktu startowego; odrzucenie i `notFound` niczego nie zapisują; id usuniętego wpisu nie jest używane ponownie):
+
+| Komenda | Argumenty | Wynik (`kind`) |
+| --- | --- | --- |
+| `service_register` | — | `ServiceRegister` (bez `kind`): `{ services: ServiceView[] }` w kolejności wyświetlania (`register_order`: najpierw wpisy z terminem rosnąco po dacie, potem wpisy z samym progiem przebiegu rosnąco po km; remis rozstrzyga `id`) |
+| `add_service` | `input`: `ServiceInput` | `AddServiceResult`: `saved` (+ `id`), `rejected` (+ `reason`: `ServiceRejection`) |
+| `update_service` | `id`, `input`: `ServiceInput` | `UpdateServiceResult`: `saved`, `notFound`, `rejected` (+ `reason`: `ServiceRejection`); zastępuje wszystkie pola wpisu, `id` bez zmian; `notFound` ma pierwszeństwo przed walidacją |
+| `delete_service` | `id` | `DeleteServiceResult`: `deleted`, `notFound` |
+
+Typy zagnieżdżone w komendach serwisów:
+
+- `ServiceView` = `{ id, name, note: string \| null, dueOdometerKm: number \| null, dueDate: string \| null, recurrence: Recurrence \| null }`.
+- `ServiceInput` = `{ name, note: string \| null, dueOdometerKm: number \| null, dueDate: string \| null, recurrence: Recurrence \| null }` — wszystkie klucze wymagane (brak klucza = `Err`), wartości mogą być `null`; `name` i `note` przycinane przed walidacją, pusta notatka zapisywana jako `null`.
+- `Recurrence` = `{ everyKm: number \| null, everyMonths: number \| null }` (oba klucze wymagane).
+- `ServiceRejection`: `nameEmpty`, `nameTooLong`, `noteTooLong`, `noThreshold`, `odometerOutOfRange`, `invalidDate`, `intervalMismatch`, `intervalKmOutOfRange`, `intervalMonthsOutOfRange`.
+
+Błąd (`Err`) każdej komendy to czytelny komunikat po polsku, nigdy nie zawierający hasła. Komendy paliwowe i serwisowe bez odblokowanej sesji zwracają `Err("dane są zablokowane; odblokuj aplikację")`.

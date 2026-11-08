@@ -371,19 +371,19 @@ Rejestr jednego auta to kilkanaście wpisów; sortowanie przy każdym odczycie b
 
 #### Automated
 
-- [x] 1.1 Testy domeny serwisu przechodzą: `cargo test service::tests` w `src-tauri/`
-- [x] 1.2 Testy sejfu (migracja v2 → v3, kopia `pre-v3`, brakujące pola) przechodzą: `cargo test vault::tests` w `src-tauri/`
-- [x] 1.3 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
-- [x] 1.4 Brak ostrzeżeń kompilacji (w tym martwego kodu): `cargo check` w `src-tauri/`
+- [x] 1.1 Testy domeny serwisu przechodzą: `cargo test service::tests` w `src-tauri/` — c475eca
+- [x] 1.2 Testy sejfu (migracja v2 → v3, kopia `pre-v3`, brakujące pola) przechodzą: `cargo test vault::tests` w `src-tauri/` — c475eca
+- [x] 1.3 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/` — c475eca
+- [x] 1.4 Brak ostrzeżeń kompilacji (w tym martwego kodu): `cargo check` w `src-tauri/` — c475eca
 
 ### Phase 2: Komendy i kontrakt serwisów
 
 #### Automated
 
-- [ ] 2.1 Testy komend i kształtu JSON przechodzą: `cargo test service::commands` w `src-tauri/`
-- [ ] 2.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
-- [ ] 2.3 Brak ostrzeżeń kompilacji: `cargo check` w `src-tauri/`
-- [ ] 2.4 Frontend kompiluje się z nowymi typami: `npm run build`
+- [x] 2.1 Testy komend i kształtu JSON przechodzą: `cargo test service::commands` w `src-tauri/`
+- [x] 2.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
+- [x] 2.3 Brak ostrzeżeń kompilacji: `cargo check` w `src-tauri/`
+- [x] 2.4 Frontend kompiluje się z nowymi typami: `npm run build`
 
 ### Phase 3: UI rejestru serwisów i zakładki
 
