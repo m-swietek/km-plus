@@ -3,7 +3,7 @@ project: kmPlus
 version: 1
 status: draft                    # draft | active | locked
 created: 2026-10-03
-updated: 2026-10-26
+updated: 2026-11-08
 prd_version: 4
 main_goal: quality
 top_blocker: skills
@@ -43,7 +43,7 @@ Kierowca auta z instalacją gazową nie zna realnego spalania — komputer pokł
 | ---- | --------------------------- | ------------------------------------------------------------------------------------ | ------------- | ----------------------------- | -------- |
 | S-01 | password-unlocked-vault     | ustawić hasło przy pierwszym uruchomieniu i odblokowywać nim zaszyfrowane dane        | —             | FR-001                        | done     |
 | S-02 | first-fillup-consumption    | podać punkt startowy, dodać tankowanie i od razu zobaczyć spalanie tego paliwa i koszt | S-01          | US-01, FR-002, FR-003, FR-007 | done |
-| S-03 | fillup-history-both-fuels   | przeglądać historię tankowań i bieżące spalanie osobno dla gazu i benzyny             | S-02          | US-01, FR-007                 | in-progress |
+| S-03 | fillup-history-both-fuels   | przeglądać historię tankowań i bieżące spalanie osobno dla gazu i benzyny             | S-02          | US-01, FR-007                 | done |
 | S-04 | correct-or-delete-fillup    | poprawić lub usunąć wpis tankowania i zobaczyć przeliczone spalanie                   | S-03          | US-01, FR-004, FR-005         | proposed |
 | S-05 | plan-service                | zaplanować, edytować i usunąć przegląd lub wymianę z progiem przebiegu i/lub daty     | S-01          | US-02, FR-008, FR-009         | proposed |
 | S-06 | standalone-odometer-entry   | dodać samodzielny wpis przebiegu i zobaczyć najnowszy znany przebieg auta             | S-02          | US-03, FR-006                 | proposed |
@@ -117,7 +117,7 @@ Brak osobnych fundamentów w tym kamieniu milowym. Jedyne brakujące warstwy (da
 - **Unknowns:**
   - Jak zakomunikować brak wyniku dla paliwa, które nie ma jeszcze zamkniętego okresu (np. same dolewki), skoro nie wolno pokazać szacunku? — Owner: user. Block: no.
 - **Risk:** Oddzielone od `S-02`, żeby gwiazda przewodnia była wąska; przeplatanie paliw i dolewki to scenariusze, które ujawniają błędy reguły.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-04: Poprawka i usunięcie tankowania
 
@@ -222,3 +222,4 @@ PRD nie ma otwartych pytań (cztery rozstrzygnięte 2026-09-19). Pytania poniże
 ## Done
 - **S-01: użytkownik może przy pierwszym uruchomieniu ustawić hasło, a przy każdym kolejnym odblokować nim aplikację; bez poprawnego hasła dane na dysku są nieczytelne, a aktualizacja aplikacji nie narusza zapisanych danych.** — Archived 2026-10-11 → `context/archive/2026-10-09-password-unlocked-vault/`. Lesson: —.
 - **S-02: użytkownik może przy pierwszym uruchomieniu podać punkt startowy (data i przebieg ostatniego tankowania), dodać wpis tankowania (rodzaj paliwa, data, przebieg, litry, kwota, czy do pełna) i bez dodatkowej akcji zobaczyć spalanie tego paliwa oraz koszt.** — Archived 2026-10-18 → `context/archive/2026-10-11-first-fillup-consumption/`. Lesson: —.
+- **S-03: użytkownik może przeglądać historię tankowań oraz bieżące spalanie osobno dla gazu i dla benzyny, także przy przeplatanych tankowaniach obu paliw i częściowych dolewkach.** — Archived 2026-11-08 → `context/archive/2026-10-26-fillup-history-both-fuels/`. Lesson: —.

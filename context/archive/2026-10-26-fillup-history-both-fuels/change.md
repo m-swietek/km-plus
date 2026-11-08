@@ -1,10 +1,10 @@
 ---
 change_id: fillup-history-both-fuels
 title: Historia tankowań i bieżące spalanie osobno dla gazu i benzyny
-status: impl_reviewed
+status: archived
 created: 2026-10-26
 updated: 2026-11-08
-archived_at: null
+archived_at: 2026-11-08T17:15:09Z
 ---
 
 ## Notes
