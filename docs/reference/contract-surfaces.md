@@ -16,7 +16,7 @@ Rejestr nazw nośnych: wartości, których zmiana psuje istniejące dane użytko
 | `kmplus.vault.bak` (poprzednia dobra wersja) | `src-tauri/src/vault/mod.rs` (`BACKUP_FILE`) | Kopie zapisane przez starsze wersje nie są wykrywane — brak przywracania po uszkodzeniu. |
 | `kmplus.vault.tmp`, `kmplus.vault.bak.tmp`, `kmplus.vault.pre.tmp` (pliki robocze zapisu atomowego) | `src-tauri/src/vault/mod.rs` (`TMP_FILE`, `BACKUP_TMP_FILE`, `PRE_MIGRATION_TMP_FILE`) | Osierocone pliki robocze starszych wersji zostają w katalogu; brak utraty danych, ale niespójny katalog. |
 | `kmplus.vault.damaged-<unix s>` (odłożony uszkodzony plik główny) | `src-tauri/src/vault/mod.rs` (`DAMAGED_PREFIX`) | Narzędzia i instrukcje odzyskiwania szukające tego wzorca przestają go znajdować. |
-| `kmplus.vault.pre-v<N>-<unix s>` (nietknięta kopia pliku głównego w starszym formacie ładunku, zapisywana przy pierwszym zapisie po migracji do formatu `N`; nigdy nie usuwana) | `src-tauri/src/vault/mod.rs` (`PRE_MIGRATION_PREFIX`) | Narzędzia i instrukcje odzyskiwania sprzed migracji przestają znajdować kopię. |
+| `kmplus.vault.pre-v<N>-<unix s>` (nietknięta kopia pliku głównego w starszym formacie ładunku, zapisywana przy pierwszym zapisie po migracji do formatu `N`, czyli bieżącego — np. `kmplus.vault.pre-v3-<unix s>` dla pliku v1 lub v2; nigdy nie usuwana) | `src-tauri/src/vault/mod.rs` (`PRE_MIGRATION_PREFIX`) | Narzędzia i instrukcje odzyskiwania sprzed migracji przestają znajdować kopię. |
 
 ## Vault format
 
@@ -24,17 +24,17 @@ Rejestr nazw nośnych: wartości, których zmiana psuje istniejące dane użytko
 | --- | --- | --- |
 | Magic `KMPV` | `src-tauri/src/vault/format.rs` (`MAGIC`) | Wszystkie istniejące pliki traktowane jako uszkodzone. |
 | `envelope_version` = `1` | `src-tauri/src/vault/format.rs` (`ENVELOPE_VERSION`) | Wyższa wartość: starsze aplikacje odmawiają otwarcia (`tooNew`). Wymaga migratora i kopii przed migracją. |
-| `format_version` = `2` (jawny ładunek JSON; v1 migrowany w pamięci przez `migrate_v1_to_v2`) | `src-tauri/src/vault/data.rs` (`CURRENT_FORMAT_VERSION`) | Wyższa wartość: starsze aplikacje odmawiają otwarcia (`tooNew`). Wymaga migratora i kopii przed migracją. |
+| `format_version` = `3` (jawny ładunek JSON; starsze migrowane w pamięci łańcuchem v1 → v2 → v3: `migrate_v1_to_v2`, `migrate_v2_to_v3`) | `src-tauri/src/vault/data.rs` (`CURRENT_FORMAT_VERSION`) | Wyższa wartość: starsze aplikacje odmawiają otwarcia (`tooNew`). Wymaga migratora i kopii przed migracją. |
 | Domyślne parametry KDF Argon2id: `m_cost` 65536 KiB / `t_cost` 3 / `p_cost` 1 | `src-tauri/src/vault/format.rs` (`KdfParams::default`) | Dotyczy tylko nowo zakładanych sejfów (parametry są zapisane w nagłówku); zmienia czas odblokowania. |
 | Długość nagłówka 59 B (cały nagłówek = AAD) | `src-tauri/src/vault/format.rs` (`HEADER_LEN`) | Zmiana układu nagłówka unieważnia wszystkie istniejące pliki — tylko razem z nową `envelope_version`. |
 
 ## Vault payload
 
-Jawny ładunek JSON v2 wewnątrz sejfu (`src-tauri/src/vault/data.rs`, `VaultData`; typy domenowe w `src-tauri/src/fuel/mod.rs`). Nazwy pól są w snake_case i wszystkie są wymagane (brak pola w v2 = uszkodzenie). Zmiana nazwy pola, wartości lub jednostki unieważnia istniejące dane — tylko razem z nowym `format_version` i migratorem.
+Jawny ładunek JSON v3 wewnątrz sejfu (`src-tauri/src/vault/data.rs`, `VaultData`; typy domenowe w `src-tauri/src/fuel/mod.rs` i `src-tauri/src/service/mod.rs`). Nazwy pól są w snake_case i wszystkie klucze są wymagane, także te, których wartość może być `null` (brak klucza w v3 = uszkodzenie). Zmiana nazwy pola, wartości lub jednostki unieważnia istniejące dane — tylko razem z nowym `format_version` i migratorem.
 
 | Pole | Typ / jednostka | Uwagi |
 | --- | --- | --- |
-| `format_version` | liczba całkowita | `2` |
+| `format_version` | liczba całkowita | `3` |
 | `created_at` | sekundy epoki | czas założenia sejfu |
 | `start_point` | obiekt `{ date, odometer_km }` albo `null` | ustawiany raz; `date` = `YYYY-MM-DD`, `odometer_km` w km (`0..=9 999 999`) |
 | `fill_ups` | tablica `FillUp` | wyniki spalania nie są zapisywane — liczone na nowo z całej listy |
@@ -46,6 +46,16 @@ Jawny ładunek JSON v2 wewnątrz sejfu (`src-tauri/src/vault/data.rs`, `VaultDat
 | `FillUp.litres_cl` | centylitry | `1..=100 000` |
 | `FillUp.amount_grosze` | grosze | `1..=10 000 000` |
 | `FillUp.full_tank` | bool | tylko `true` zamyka okres spalania |
+| `services` | tablica `PlannedService` | rejestr serwisów (od v3; po migracji z v2 pusty); kolejność wyświetlania liczona przy odczycie (`register_order`), nie zapisywana |
+| `next_service_id` | liczba całkowita | id następnego serwisu, start od `1`; id nigdy nie są używane ponownie |
+| `PlannedService.id` | liczba całkowita | nadawane z `next_service_id` |
+| `PlannedService.name` | tekst | przycięty, `1..=100` znaków Unicode |
+| `PlannedService.note` | tekst albo `null` | przycięta, do 500 znaków Unicode; pusta zapisywana jako `null` |
+| `PlannedService.due_odometer_km` | km (całkowite) albo `null` | próg przebiegu (wskazanie licznika), `1..=9 999 999`; co najmniej jeden z `due_odometer_km` / `due_date` jest ustawiony |
+| `PlannedService.due_date` | `YYYY-MM-DD` albo `null` | termin; porównywany leksykograficznie |
+| `PlannedService.recurrence` | obiekt `Recurrence` albo `null` | `null` = wpis jednorazowy |
+| `Recurrence.every_km` | km (całkowite) albo `null` | interwał „co N km”, `1..=9 999 999`; ustawiony wtedy i tylko wtedy, gdy `due_odometer_km` jest ustawiony |
+| `Recurrence.every_months` | miesiące (całkowite) albo `null` | interwał „co M miesięcy”, `1..=120`; ustawiony wtedy i tylko wtedy, gdy `due_date` jest ustawiony |
 
 ## Tauri commands
 

@@ -12,7 +12,8 @@
 //!   (never deleted by the app)
 //! - `kmplus.vault.pre-v<N>-<unix s>` — untouched copy of the main file in an
 //!   older payload format, written by the first save after a migration to
-//!   format `N` (never deleted by the app)
+//!   format `N`, the current one (`pre-v3-*` for a v1 or v2 file); never
+//!   deleted by the app
 
 pub mod commands;
 mod data;
@@ -128,7 +129,8 @@ impl UnlockedVault {
         // (0) after a migration: untouched old-format file -> pre-v<N> copy.
         // The flag is cleared only once the copy is safely on disk, or when
         // there is no main file (nothing old-format left to preserve; keeping
-        // the flag would later copy v2 bytes under the pre-v<N> name).
+        // the flag would later copy current-format bytes under the pre-v<N>
+        // name).
         if self.pre_migration_copy_due {
             if let Some(previous) = &previous {
                 let copy = unique_path(

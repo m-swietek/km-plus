@@ -1,7 +1,7 @@
 ---
 change_id: plan-service
 title: Rejestr serwisów — planowanie, edycja i usuwanie przeglądu lub wymiany
-status: planned
+status: implementing
 created: 2026-11-08
 updated: 2026-11-08
 archived_at: null

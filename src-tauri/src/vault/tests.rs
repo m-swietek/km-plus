@@ -479,7 +479,7 @@ fn newer_envelope_version_is_too_new() {
 
 #[test]
 fn newer_format_version_is_too_new() {
-    let payload = br#"{"format_version":3,"created_at":"not a number","new_field":[1,2]}"#;
+    let payload = br#"{"format_version":4,"created_at":"not a number","new_field":[1,2]}"#;
     assert_eq!(data::decode(payload), Err(data::DecodeError::TooNew));
 
     let dir = TempDir::new().unwrap();
@@ -521,38 +521,9 @@ fn default_kdf_params_written_to_header() {
     expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
 }
 
-// --- Format v2, migration from v1 and the pre-migration copy ---
+// --- Format v3, migration from v1 and v2, and the pre-migration copy ---
 
 const V1_PAYLOAD: &[u8] = br#"{"format_version":1,"created_at":1700000000}"#;
-
-/// Replaces the main file with a v1 payload sealed under the vault's key, as
-/// written by app 0.1.3. Returns the bytes of that v1 file.
-fn write_v1_main(dir: &Path) -> Vec<u8> {
-    let vault = new_vault(dir);
-    let header = Header {
-        params: vault.params,
-        salt: vault.salt,
-    };
-    let bytes = format::seal(&vault.key, &header, V1_PAYLOAD);
-    fs::write(main_path(dir), &bytes).unwrap();
-    bytes
-}
-
-fn pre_migration_copies(dir: &Path) -> Vec<(String, Vec<u8>)> {
-    let mut copies: Vec<_> = fs::read_dir(dir)
-        .unwrap()
-        .map(|e| e.unwrap())
-        .filter(|e| e.file_name().to_string_lossy().starts_with(PRE_MIGRATION_PREFIX))
-        .map(|e| {
-            (
-                e.file_name().to_string_lossy().into_owned(),
-                fs::read(e.path()).unwrap(),
-            )
-        })
-        .collect();
-    copies.sort();
-    copies
-}
 
 fn sample_fill_up(id: u64) -> crate::fuel::FillUp {
     crate::fuel::FillUp {
@@ -566,22 +537,118 @@ fn sample_fill_up(id: u64) -> crate::fuel::FillUp {
     }
 }
 
+/// A petrol top-up, so a migrated v2 payload has entries of both fuels.
+fn sample_petrol_top_up(id: u64) -> crate::fuel::FillUp {
+    crate::fuel::FillUp {
+        id,
+        fuel: crate::fuel::Fuel::Petrol,
+        date: "2026-01-09".into(),
+        odometer_km: 100_750,
+        litres_cl: 1_234,
+        amount_grosze: 7_890,
+        full_tank: false,
+    }
+}
+
+fn sample_service(id: u64) -> crate::service::PlannedService {
+    crate::service::PlannedService {
+        id,
+        name: "Rozrząd".into(),
+        note: Some("pasek + pompa".into()),
+        due_odometer_km: Some(180_000),
+        due_date: Some("2028-06-01".into()),
+        recurrence: Some(crate::service::Recurrence {
+            every_km: Some(90_000),
+            every_months: Some(48),
+        }),
+    }
+}
+
+/// A v2 payload as written by app 0.1.4-0.1.6: start point and fill-ups of
+/// both fuels, no services.
+fn v2_payload() -> serde_json::Value {
+    serde_json::json!({
+        "format_version": 2,
+        "created_at": 1_700_000_000u64,
+        "start_point": { "date": "2026-01-01", "odometer_km": 100_000 },
+        "fill_ups": [
+            serde_json::to_value(sample_fill_up(1)).unwrap(),
+            serde_json::to_value(sample_petrol_top_up(2)).unwrap(),
+        ],
+        "next_fill_up_id": 3
+    })
+}
+
+/// A complete v3 payload with one service, for missing-field checks.
+fn v3_payload() -> serde_json::Value {
+    let mut data = VaultData::new(5);
+    data.services.push(sample_service(1));
+    data.next_service_id = 2;
+    serde_json::to_value(&data).unwrap()
+}
+
+/// Replaces the main file with `payload` sealed under the vault's key, as
+/// written by an older app. Returns the bytes of that file.
+fn write_old_main(dir: &Path, payload: &[u8]) -> Vec<u8> {
+    let vault = new_vault(dir);
+    let header = Header {
+        params: vault.params,
+        salt: vault.salt,
+    };
+    let bytes = format::seal(&vault.key, &header, payload);
+    fs::write(main_path(dir), &bytes).unwrap();
+    bytes
+}
+
+/// v1 file as written by app 0.1.3.
+fn write_v1_main(dir: &Path) -> Vec<u8> {
+    write_old_main(dir, V1_PAYLOAD)
+}
+
+/// v2 file as written by app 0.1.4-0.1.6.
+fn write_v2_main(dir: &Path) -> Vec<u8> {
+    write_old_main(dir, v2_payload().to_string().as_bytes())
+}
+
+fn pre_migration_copies(dir: &Path) -> Vec<(String, Vec<u8>)> {
+    let mut copies: Vec<_> = fs::read_dir(dir)
+        .unwrap()
+        .map(|e| e.unwrap())
+        .filter(|e| {
+            e.file_name()
+                .to_string_lossy()
+                .starts_with(PRE_MIGRATION_PREFIX)
+        })
+        .map(|e| {
+            (
+                e.file_name().to_string_lossy().into_owned(),
+                fs::read(e.path()).unwrap(),
+            )
+        })
+        .collect();
+    copies.sort();
+    copies
+}
+
 #[test]
-fn v1_payload_migrates_to_empty_v2() {
+fn v1_payload_migrates_to_empty_v3() {
     let decoded = data::decode(V1_PAYLOAD).unwrap();
     assert_eq!(decoded.migrated_from, Some(1));
     assert_eq!(
         decoded.data,
         VaultData {
-            format_version: 2,
+            format_version: 3,
             created_at: 1_700_000_000,
             start_point: None,
             fill_ups: vec![],
             next_fill_up_id: 1,
+            services: vec![],
+            next_service_id: 1,
         }
     );
 
-    // A current payload decodes as is and round-trips through encode.
+    // A current payload with services decodes as is and round-trips through
+    // encode.
     let mut data = VaultData::new(5);
     data.start_point = Some(crate::fuel::StartPoint {
         date: "2026-01-01".into(),
@@ -589,6 +656,16 @@ fn v1_payload_migrates_to_empty_v2() {
     });
     data.fill_ups.push(sample_fill_up(1));
     data.next_fill_up_id = 2;
+    data.services.push(sample_service(1));
+    data.services.push(crate::service::PlannedService {
+        id: 3,
+        name: "Przegląd techniczny".into(),
+        note: None,
+        due_odometer_km: None,
+        due_date: Some("2027-03-01".into()),
+        recurrence: None,
+    });
+    data.next_service_id = 4;
     let encoded = data::encode(&data).unwrap();
     let decoded = data::decode(&encoded).unwrap();
     assert_eq!(decoded.migrated_from, None);
@@ -599,6 +676,36 @@ fn v1_payload_migrates_to_empty_v2() {
         data::decode(br#"{"format_version":1}"#),
         Err(data::DecodeError::Malformed)
     );
+}
+
+#[test]
+fn v2_payload_migrates_to_v3_keeping_fill_ups() {
+    let decoded = data::decode(v2_payload().to_string().as_bytes()).unwrap();
+    assert_eq!(decoded.migrated_from, Some(2));
+    assert_eq!(
+        decoded.data,
+        VaultData {
+            format_version: 3,
+            created_at: 1_700_000_000,
+            start_point: Some(crate::fuel::StartPoint {
+                date: "2026-01-01".into(),
+                odometer_km: 100_000,
+            }),
+            fill_ups: vec![sample_fill_up(1), sample_petrol_top_up(2)],
+            next_fill_up_id: 3,
+            services: vec![],
+            next_service_id: 1,
+        }
+    );
+
+    // A v2 payload without a start point keeps the `null`.
+    let mut payload = v2_payload();
+    payload["start_point"] = serde_json::Value::Null;
+    payload["fill_ups"] = serde_json::json!([]);
+    payload["next_fill_up_id"] = serde_json::json!(1);
+    let decoded = data::decode(payload.to_string().as_bytes()).unwrap();
+    assert_eq!(decoded.migrated_from, Some(2));
+    assert_eq!(decoded.data, VaultData::new(1_700_000_000));
 }
 
 #[test]
@@ -637,6 +744,90 @@ fn v2_missing_field_is_malformed() {
 }
 
 #[test]
+fn v3_missing_field_is_malformed() {
+    let full = v3_payload();
+    assert_eq!(
+        data::decode(full.to_string().as_bytes())
+            .unwrap()
+            .migrated_from,
+        None
+    );
+
+    // Every top-level field is required.
+    let top_level = [
+        "format_version",
+        "created_at",
+        "start_point",
+        "fill_ups",
+        "next_fill_up_id",
+        "services",
+        "next_service_id",
+    ];
+    assert_eq!(full.as_object().unwrap().len(), top_level.len());
+    for field in top_level {
+        let mut payload = full.clone();
+        assert!(
+            payload.as_object_mut().unwrap().remove(field).is_some(),
+            "{field} not in payload"
+        );
+        assert_eq!(
+            data::decode(payload.to_string().as_bytes()),
+            Err(data::DecodeError::Malformed),
+            "missing {field}"
+        );
+    }
+
+    // Every key of a service is required, nullable ones included.
+    for key in [
+        "id",
+        "name",
+        "note",
+        "due_odometer_km",
+        "due_date",
+        "recurrence",
+    ] {
+        let mut payload = full.clone();
+        assert!(
+            payload["services"][0]
+                .as_object_mut()
+                .unwrap()
+                .remove(key)
+                .is_some(),
+            "{key} not in service"
+        );
+        assert_eq!(
+            data::decode(payload.to_string().as_bytes()),
+            Err(data::DecodeError::Malformed),
+            "service missing {key}"
+        );
+    }
+
+    // So is every key of a recurrence.
+    for key in ["every_km", "every_months"] {
+        let mut payload = full.clone();
+        assert!(
+            payload["services"][0]["recurrence"]
+                .as_object_mut()
+                .unwrap()
+                .remove(key)
+                .is_some(),
+            "{key} not in recurrence"
+        );
+        assert_eq!(
+            data::decode(payload.to_string().as_bytes()),
+            Err(data::DecodeError::Malformed),
+            "recurrence missing {key}"
+        );
+    }
+
+    // `null` is fine where the value is nullable.
+    let mut payload = full.clone();
+    payload["services"][0]["note"] = serde_json::Value::Null;
+    payload["services"][0]["recurrence"] = serde_json::Value::Null;
+    assert!(data::decode(payload.to_string().as_bytes()).is_ok());
+}
+
+#[test]
 fn unlock_of_v1_vault_writes_nothing() {
     let dir = TempDir::new().unwrap();
     write_v1_main(dir.path());
@@ -646,12 +837,32 @@ fn unlock_of_v1_vault_writes_nothing() {
     assert_eq!(vault.data.format_version, data::CURRENT_FORMAT_VERSION);
     assert_eq!(vault.data.created_at, 1_700_000_000);
     assert_eq!(vault.data.start_point, None);
+    assert!(vault.data.services.is_empty());
     assert!(vault.pre_migration_copy_due);
     assert_eq!(snapshot(dir.path()), before);
 }
 
 #[test]
-fn first_save_after_migration_writes_pre_v2_copy_of_v1_bytes() {
+fn unlock_of_v2_vault_writes_nothing() {
+    let dir = TempDir::new().unwrap();
+    write_v2_main(dir.path());
+    let before = snapshot(dir.path());
+
+    let vault = expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
+    assert_eq!(vault.data.format_version, data::CURRENT_FORMAT_VERSION);
+    assert_eq!(
+        vault.data.fill_ups,
+        vec![sample_fill_up(1), sample_petrol_top_up(2)]
+    );
+    assert_eq!(vault.data.next_fill_up_id, 3);
+    assert!(vault.data.services.is_empty());
+    assert_eq!(vault.data.next_service_id, 1);
+    assert!(vault.pre_migration_copy_due);
+    assert_eq!(snapshot(dir.path()), before);
+}
+
+#[test]
+fn first_save_after_migration_writes_pre_v3_copy_of_v1_bytes() {
     let dir = TempDir::new().unwrap();
     let v1_bytes = write_v1_main(dir.path());
     let mut vault = expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
@@ -661,11 +872,15 @@ fn first_save_after_migration_writes_pre_v2_copy_of_v1_bytes() {
 
     let copies = pre_migration_copies(dir.path());
     assert_eq!(copies.len(), 1);
-    assert!(copies[0].0.starts_with("kmplus.vault.pre-v2-"), "{}", copies[0].0);
+    assert!(
+        copies[0].0.starts_with("kmplus.vault.pre-v3-"),
+        "{}",
+        copies[0].0
+    );
     assert_eq!(copies[0].1, v1_bytes);
     assert!(!vault.pre_migration_copy_due);
 
-    // The main file is now v2 and opens without a migration.
+    // The main file is now v3 and opens without a migration.
     let reopened = expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
     assert!(!reopened.pre_migration_copy_due);
     assert_eq!(reopened.data, vault.data);
@@ -674,21 +889,67 @@ fn first_save_after_migration_writes_pre_v2_copy_of_v1_bytes() {
 }
 
 #[test]
-fn second_save_writes_no_further_copy() {
+fn first_save_after_v2_migration_writes_pre_v3_copy_of_v2_bytes() {
     let dir = TempDir::new().unwrap();
-    let v1_bytes = write_v1_main(dir.path());
+    let v2_bytes = write_v2_main(dir.path());
     let mut vault = expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
-    vault.save().unwrap();
-    vault.save().unwrap();
-    vault.save().unwrap();
+    let migrated = vault.data.clone();
+    assert!(pre_migration_copies(dir.path()).is_empty());
+
+    // First change after the update: a service is added.
+    let mut next = vault.data.clone();
+    next.services.push(sample_service(next.next_service_id));
+    next.next_service_id += 1;
+    vault.commit(next.clone()).unwrap();
 
     let copies = pre_migration_copies(dir.path());
     assert_eq!(copies.len(), 1);
-    assert_eq!(copies[0].1, v1_bytes);
+    assert!(
+        copies[0].0.starts_with("kmplus.vault.pre-v3-"),
+        "{}",
+        copies[0].0
+    );
+    assert_eq!(copies[0].1, v2_bytes);
+    assert!(!vault.pre_migration_copy_due);
+
+    // The main file is now v3: fuel data untouched, plus the service.
+    let reopened = expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
+    assert!(!reopened.pre_migration_copy_due);
+    assert_eq!(reopened.data, next);
+    assert_eq!(reopened.data.created_at, migrated.created_at);
+    assert_eq!(reopened.data.start_point, migrated.start_point);
+    assert_eq!(reopened.data.fill_ups, migrated.fill_ups);
+    assert_eq!(reopened.data.next_fill_up_id, migrated.next_fill_up_id);
+    assert_eq!(reopened.data.services, vec![sample_service(1)]);
+    assert_eq!(reopened.data.next_service_id, 2);
+    // The usual rotation still happened.
+    assert_eq!(fs::read(dir.path().join(BACKUP_FILE)).unwrap(), v2_bytes);
 }
 
 #[test]
-fn restore_backup_from_v1_then_save_writes_pre_v2_copy() {
+fn second_save_writes_no_further_copy() {
+    let writers: [(&str, fn(&Path) -> Vec<u8>); 2] = [("v1", write_v1_main), ("v2", write_v2_main)];
+    for (source, write_main) in writers {
+        let dir = TempDir::new().unwrap();
+        let old_bytes = write_main(dir.path());
+        let mut vault = expect_unlocked(unlock(dir.path(), PASSWORD).unwrap());
+        vault.save().unwrap();
+        vault.save().unwrap();
+        vault.save().unwrap();
+
+        let copies = pre_migration_copies(dir.path());
+        assert_eq!(copies.len(), 1, "{source}");
+        assert!(
+            copies[0].0.starts_with("kmplus.vault.pre-v3-"),
+            "{}",
+            copies[0].0
+        );
+        assert_eq!(copies[0].1, old_bytes, "{source}");
+    }
+}
+
+#[test]
+fn restore_backup_from_v1_then_save_writes_pre_v3_copy() {
     let dir = TempDir::new().unwrap();
     let v1_bytes = write_v1_main(dir.path());
     // The v1 file becomes the backup and the main file is damaged.
@@ -702,11 +963,16 @@ fn restore_backup_from_v1_then_save_writes_pre_v2_copy() {
     vault.save().unwrap();
     let copies = pre_migration_copies(dir.path());
     assert_eq!(copies.len(), 1);
+    assert!(
+        copies[0].0.starts_with("kmplus.vault.pre-v3-"),
+        "{}",
+        copies[0].0
+    );
     assert_eq!(copies[0].1, v1_bytes);
 }
 
 #[test]
-fn v2_vault_save_writes_no_pre_migration_copy() {
+fn v3_vault_save_writes_no_pre_migration_copy() {
     let dir = TempDir::new().unwrap();
     let mut vault = new_vault(dir.path());
     vault.save().unwrap();

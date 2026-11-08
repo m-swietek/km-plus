@@ -1,4 +1,8 @@
 mod fuel;
+// Used only by the vault payload and tests until the service Tauri commands
+// land (Phase 2 of plan-service); drop the allow then.
+#[allow(dead_code)]
+mod service;
 mod vault;
 
 use fuel::commands::{

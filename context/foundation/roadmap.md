@@ -45,7 +45,7 @@ Kierowca auta z instalacją gazową nie zna realnego spalania — komputer pokł
 | S-02 | first-fillup-consumption    | podać punkt startowy, dodać tankowanie i od razu zobaczyć spalanie tego paliwa i koszt | S-01          | US-01, FR-002, FR-003, FR-007 | done |
 | S-03 | fillup-history-both-fuels   | przeglądać historię tankowań i bieżące spalanie osobno dla gazu i benzyny             | S-02          | US-01, FR-007                 | done |
 | S-04 | correct-or-delete-fillup    | poprawić lub usunąć wpis tankowania i zobaczyć przeliczone spalanie                   | S-03          | US-01, FR-004, FR-005         | in-progress |
-| S-05 | plan-service                | zaplanować, edytować i usunąć przegląd lub wymianę z progiem przebiegu i/lub daty     | S-01          | US-02, FR-008, FR-009         | planning |
+| S-05 | plan-service                | zaplanować, edytować i usunąć przegląd lub wymianę z progiem przebiegu i/lub daty     | S-01          | US-02, FR-008, FR-009         | in-progress |
 | S-06 | standalone-odometer-entry   | dodać samodzielny wpis przebiegu i zobaczyć najnowszy znany przebieg auta             | S-02          | US-03, FR-006                 | proposed |
 | S-07 | service-reminder-on-open    | po otwarciu aplikacji od razu zobaczyć przypomnienie o serwisie, którego próg minął   | S-05, S-06    | US-03, FR-010                 | proposed |
 | S-08 | complete-recurring-service  | oznaczyć serwis jako wykonany; cykliczny tworzy kolejne wystąpienie od bieżącego stanu | S-07          | US-03, FR-011                 | proposed |
@@ -142,7 +142,7 @@ Brak osobnych fundamentów w tym kamieniu milowym. Jedyne brakujące warstwy (da
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Niezależny od reguły spalania, więc może iść równolegle z gwiazdą przewodnią; oznaczenie „cykliczny” samo nie tworzy kolejnego wystąpienia (US-02).
-- **Status:** planning
+- **Status:** in-progress
 
 ### S-06: Samodzielny wpis przebiegu
 
