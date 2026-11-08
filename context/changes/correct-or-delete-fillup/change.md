@@ -1,7 +1,7 @@
 ---
 change_id: correct-or-delete-fillup
 title: Poprawka i usunięcie wpisu tankowania z przeliczeniem spalania
-status: planned
+status: implementing
 created: 2026-11-08
 updated: 2026-11-08
 archived_at: null

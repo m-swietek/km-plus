@@ -177,6 +177,48 @@ pub fn validate_fill_up(
     Ok(())
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EditRejection {
+    /// No entry with this id.
+    NotFound,
+    Invalid(FillUpRejection),
+}
+
+/// Replaces entry `id` with `new`, keeping its id and its place in the list
+/// (`compute` sorts by odometer, so the place does not matter). `new` is
+/// checked with the rules for a new entry against every entry except the one
+/// being replaced — otherwise an unchanged entry would collide with itself.
+// Called by the fuel commands added in Phase 2; drop the allow then.
+#[allow(dead_code)]
+pub fn replace_fill_up(
+    start: &StartPoint,
+    fill_ups: &[FillUp],
+    id: u64,
+    new: NewFillUp,
+) -> Result<Vec<FillUp>, EditRejection> {
+    let index = fill_ups
+        .iter()
+        .position(|f| f.id == id)
+        .ok_or(EditRejection::NotFound)?;
+    let others: Vec<FillUp> = fill_ups.iter().filter(|f| f.id != id).cloned().collect();
+    validate_fill_up(start, &others, &new).map_err(EditRejection::Invalid)?;
+    let mut next = fill_ups.to_vec();
+    next[index] = new.with_id(id);
+    Ok(next)
+}
+
+/// Removes entry `id`; `None` when there is no such entry. Needs no
+/// validation: the rules compare entries in pairs, so the remaining entries
+/// stay consistent with each other.
+// Called by the fuel commands added in Phase 2; drop the allow then.
+#[allow(dead_code)]
+pub fn remove_fill_up(fill_ups: &[FillUp], id: u64) -> Option<Vec<FillUp>> {
+    let index = fill_ups.iter().position(|f| f.id == id)?;
+    let mut next = fill_ups.to_vec();
+    next.remove(index);
+    Some(next)
+}
+
 /// Result for every entry, in the order of `fill_ups`. Each fuel is handled
 /// on its own: entries sorted by odometer, the start point as the first
 /// anchor, litres and amounts summed until a full tank closes the period.

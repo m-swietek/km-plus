@@ -317,9 +317,9 @@ Ryzyka scalenia z równoległym S-05 (`plan-service`): wspólne pliki `src/AppSh
 
 #### Automated
 
-- [ ] 1.1 Testy domeny przechodzą: `cargo test fuel::tests` w `src-tauri/`
-- [ ] 1.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
-- [ ] 1.3 Brak ostrzeżeń kompilacji o martwym kodzie: `cargo check` w `src-tauri/`
+- [x] 1.1 Testy domeny przechodzą: `cargo test fuel::tests` w `src-tauri/`
+- [x] 1.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
+- [x] 1.3 Brak ostrzeżeń kompilacji o martwym kodzie: `cargo check` w `src-tauri/`
 
 ### Phase 2: Kontrakt — `update_fill_up` i `delete_fill_up`
 

@@ -631,3 +631,215 @@ fn validate_start_point_bounds() {
     );
     assert_eq!(validate_start_point(&sp("2028-02-29", 1_000)), Ok(()));
 }
+
+/// The entry as it would be entered again.
+fn as_new(f: &FillUp) -> NewFillUp {
+    NewFillUp {
+        fuel: f.fuel,
+        date: f.date.clone(),
+        odometer_km: f.odometer_km,
+        litres_cl: f.litres_cl,
+        amount_grosze: f.amount_grosze,
+        full_tank: f.full_tank,
+    }
+}
+
+/// `fill_ups` entered again from an empty list, by `(odometer_km, id)`; every
+/// entry must pass validation against the ones entered before it.
+#[track_caller]
+fn entered_from_scratch(fill_ups: &[FillUp]) -> Vec<FillUp> {
+    let mut order: Vec<&FillUp> = fill_ups.iter().collect();
+    order.sort_by_key(|f| (f.odometer_km, f.id));
+    let mut rebuilt: Vec<FillUp> = Vec::new();
+    for f in order {
+        let new = as_new(f);
+        assert_eq!(validate_fill_up(&start(), &rebuilt, &new), Ok(()), "entry {}", f.id);
+        rebuilt.push(new.with_id(f.id));
+    }
+    rebuilt
+}
+
+/// Same reports, and the same `compute` result for every id, as the list
+/// entered from scratch.
+#[track_caller]
+fn assert_equals_entered_from_scratch(fill_ups: &[FillUp], what: &str) {
+    let rebuilt = entered_from_scratch(fill_ups);
+    assert_eq!(
+        fuel_reports(&start(), fill_ups),
+        fuel_reports(&start(), &rebuilt),
+        "{what}: reports"
+    );
+    let results = compute(&start(), fill_ups);
+    let rebuilt_results = compute(&start(), &rebuilt);
+    assert_eq!(results.len(), rebuilt_results.len(), "{what}: result count");
+    for f in fill_ups {
+        assert_eq!(
+            result_of(&results, f.id),
+            result_of(&rebuilt_results, f.id),
+            "{what}: entry {}",
+            f.id
+        );
+    }
+}
+
+#[test]
+fn edit_and_delete_equal_entering_from_scratch() {
+    let sample = oracle_sample();
+    for f in &sample {
+        let id = f.id;
+
+        let removed = remove_fill_up(&sample, id).expect("entry exists");
+        assert_eq!(removed.len(), sample.len() - 1);
+        assert!(removed.iter().all(|e| e.id != id));
+        assert_equals_entered_from_scratch(&removed, &format!("delete {id}"));
+
+        let toggled = NewFillUp {
+            full_tank: !f.full_tank,
+            ..as_new(f)
+        };
+        let edited = replace_fill_up(&start(), &sample, id, toggled).expect("accepted");
+        assert_equals_entered_from_scratch(&edited, &format!("toggle full tank of {id}"));
+
+        let more_litres = NewFillUp {
+            litres_cl: f.litres_cl + 100,
+            ..as_new(f)
+        };
+        let edited = replace_fill_up(&start(), &sample, id, more_litres).expect("accepted");
+        assert_equals_entered_from_scratch(&edited, &format!("+100 cl on {id}"));
+    }
+}
+
+#[test]
+fn delete_full_tank_merges_top_ups_into_next_period() {
+    let fill_ups = remove_fill_up(&oracle_sample(), 4).expect("entry 4 exists");
+    let results = compute(&start(), &fill_ups);
+    // Top-up 3 now belongs to the period closed by 6: 100 400 -> 101 350.
+    assert_consumption(
+        result_of(&results, 6),
+        6_635.0 / 950.0,
+        950,
+        6_635,
+        20_337,
+        14_137.0 * 100.0 / 4_635.0,
+    );
+    assert_eq!(format!("{:.4}", 6_635.0_f64 / 950.0), "6.9842");
+
+    let reports = fuel_reports(&start(), &fill_ups);
+    let lpg = report_of(&reports, Fuel::Lpg);
+    let (latest, _, average) = consumption_summary(lpg);
+    assert_eq!(latest.id, 9);
+    assert_average(average, 14_835.0 / 2_010.0, 2_010, 14_835, 3);
+    assert_eq!(history_ids(lpg), [9, 8, 6, 3, 1]);
+
+    // Petrol is untouched.
+    let petrol = report_of(&reports, Fuel::Petrol);
+    let (latest, _, average) = consumption_summary(petrol);
+    assert_eq!(latest.id, 10);
+    assert_average(average, 5_277.0 / 2_300.0, 2_300, 5_277, 2);
+    assert_eq!(petrol, report_of(&fuel_reports(&start(), &oracle_sample()), Fuel::Petrol));
+}
+
+#[test]
+fn delete_only_full_tank_gives_no_closed_period() {
+    let fill_ups = vec![
+        entry(1, Fuel::Lpg, "2026-01-03", 100_300, 2_000, 6_000, false),
+        entry(2, Fuel::Lpg, "2026-01-05", 100_500, 3_000, 9_000, true),
+        entry(3, Fuel::Petrol, "2026-01-06", 100_600, 1_000, 6_500, true),
+    ];
+    consumption_summary(report_of(&fuel_reports(&start(), &fill_ups), Fuel::Lpg));
+
+    let fill_ups = remove_fill_up(&fill_ups, 2).expect("entry 2 exists");
+    let reports = fuel_reports(&start(), &fill_ups);
+    let lpg = report_of(&reports, Fuel::Lpg);
+    assert_eq!(lpg.summary, FuelSummary::NoClosedPeriod);
+    assert_eq!(history_ids(lpg), [1]);
+
+    let fill_ups = remove_fill_up(&fill_ups, 1).expect("entry 1 exists");
+    let reports = fuel_reports(&start(), &fill_ups);
+    let lpg = report_of(&reports, Fuel::Lpg);
+    assert_eq!(lpg.summary, FuelSummary::NoEntries);
+    assert!(lpg.history.is_empty());
+    // The other fuel keeps its figure.
+    let (latest, _, _) = consumption_summary(report_of(&reports, Fuel::Petrol));
+    assert_eq!(latest.id, 3);
+}
+
+#[test]
+fn edit_unchanged_entry_is_accepted() {
+    let sample = oracle_sample();
+    let before = fuel_reports(&start(), &sample);
+    for f in &sample {
+        let edited = replace_fill_up(&start(), &sample, f.id, as_new(f))
+            .unwrap_or_else(|e| panic!("entry {}: {e:?}", f.id));
+        assert_eq!(edited, sample, "entry {}", f.id);
+        assert_eq!(fuel_reports(&start(), &edited), before, "entry {}", f.id);
+    }
+}
+
+#[test]
+fn edit_fuel_moves_entry_and_recomputes_both() {
+    let sample = oracle_sample();
+    let ten = sample.iter().find(|f| f.id == 10).unwrap();
+    let as_lpg = NewFillUp {
+        fuel: Fuel::Lpg,
+        ..as_new(ten)
+    };
+    let fill_ups = replace_fill_up(&start(), &sample, 10, as_lpg).expect("accepted");
+    // Same place in the list, same id, now LPG.
+    assert_eq!(fill_ups.len(), sample.len());
+    assert_eq!(fill_ups[9].id, 10);
+    assert_eq!(fill_ups[9].fuel, Fuel::Lpg);
+
+    let results = compute(&start(), &fill_ups);
+    // Measured from LPG entry 9 (102 010), not from a petrol entry.
+    assert_consumption(
+        result_of(&results, 10),
+        777.0 / 290.0,
+        290,
+        777,
+        5_128,
+        5_128.0 * 100.0 / 777.0,
+    );
+    assert_eq!(format!("{:.4}", 777.0_f64 / 290.0), "2.6793");
+
+    let reports = fuel_reports(&start(), &fill_ups);
+    let lpg = report_of(&reports, Fuel::Lpg);
+    let (latest, latest_result, average) = consumption_summary(lpg);
+    assert_eq!(latest.id, 10);
+    assert_eq!(latest_result, result_of(&results, 10));
+    assert_average(average, 18_112.0 / 2_300.0, 2_300, 18_112, 5);
+    assert_eq!(history_ids(lpg), [10, 9, 8, 6, 4, 3, 1]);
+
+    let petrol = report_of(&reports, Fuel::Petrol);
+    let (latest, _, average) = consumption_summary(petrol);
+    assert_eq!(latest.id, 5);
+    assert_average(average, 4_000.0 / 900.0, 900, 4_000, 1);
+    assert_eq!(history_ids(petrol), [7, 5, 2]);
+}
+
+#[test]
+fn edit_rejected_reports_reason() {
+    let sample = oracle_sample();
+    let six = sample.iter().find(|f| f.id == 6).unwrap();
+    let onto_four = NewFillUp {
+        odometer_km: 100_900,
+        ..as_new(six)
+    };
+    assert_eq!(
+        replace_fill_up(&start(), &sample, 6, onto_four),
+        Err(EditRejection::Invalid(FillUpRejection::SameFuelSameOdometer {
+            date: "2026-01-12".into()
+        }))
+    );
+}
+
+#[test]
+fn edit_or_delete_unknown_id_is_not_found() {
+    let sample = oracle_sample();
+    let new = new_entry(Fuel::Lpg, "2026-03-01", 103_000, true);
+    assert_eq!(
+        replace_fill_up(&start(), &sample, 99, new),
+        Err(EditRejection::NotFound)
+    );
+    assert_eq!(remove_fill_up(&sample, 99), None);
+}
