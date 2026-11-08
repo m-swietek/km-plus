@@ -188,8 +188,6 @@ pub enum EditRejection {
 /// (`compute` sorts by odometer, so the place does not matter). `new` is
 /// checked with the rules for a new entry against every entry except the one
 /// being replaced — otherwise an unchanged entry would collide with itself.
-// Called by the fuel commands added in Phase 2; drop the allow then.
-#[allow(dead_code)]
 pub fn replace_fill_up(
     start: &StartPoint,
     fill_ups: &[FillUp],
@@ -210,8 +208,6 @@ pub fn replace_fill_up(
 /// Removes entry `id`; `None` when there is no such entry. Needs no
 /// validation: the rules compare entries in pairs, so the remaining entries
 /// stay consistent with each other.
-// Called by the fuel commands added in Phase 2; drop the allow then.
-#[allow(dead_code)]
 pub fn remove_fill_up(fill_ups: &[FillUp], id: u64) -> Option<Vec<FillUp>> {
     let index = fill_ups.iter().position(|f| f.id == id)?;
     let mut next = fill_ups.to_vec();

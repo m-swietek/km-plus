@@ -1,7 +1,8 @@
 //! Tauri command layer over the fuel domain: reading the fuel overview,
-//! setting the start point and adding a fill-up. Every command works only on
-//! an unlocked vault session; writes go through `UnlockedVault::commit`, so a
-//! failed save leaves the session data as it was.
+//! setting the start point and adding, correcting or deleting a fill-up.
+//! Every command works only on an unlocked vault session; writes go through
+//! `UnlockedVault::commit`, so a failed save leaves the session data as it
+//! was, and a refused write does not save at all.
 //!
 //! The domain types in `super` stay serde-free for results and rejections;
 //! the frontend JSON shape is owned here (DTOs below, `kind`-tagged unions,
@@ -11,9 +12,9 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use super::{
-    compute, fuel_reports, validate_fill_up, validate_start_point, AverageConsumption, FillUp,
-    FillUpRejection, FillUpResult, Fuel, FuelReport, FuelSummary, NewFillUp, StartPoint,
-    StartPointRejection,
+    compute, fuel_reports, remove_fill_up, replace_fill_up, validate_fill_up,
+    validate_start_point, AverageConsumption, EditRejection, FillUp, FillUpRejection,
+    FillUpResult, Fuel, FuelReport, FuelSummary, NewFillUp, StartPoint, StartPointRejection,
 };
 use crate::vault::commands::{lock_session, VaultSession};
 use crate::vault::{UnlockedVault, VaultData, VaultError};
@@ -107,7 +108,8 @@ pub enum StartPointRejectionView {
     OdometerOutOfRange,
 }
 
-/// A fill-up as sent by the frontend (`add_fill_up` argument `input`).
+/// A fill-up as sent by the frontend (`add_fill_up` and `update_fill_up`
+/// argument `input`).
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FillUpInput {
@@ -125,6 +127,23 @@ pub enum AddFillUpResult {
     Saved { result: FillUpResultView },
     NoStartPoint,
     Rejected { reason: FillUpRejectionView },
+}
+
+/// `result` is the recomputed result of the corrected entry.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+pub enum UpdateFillUpResult {
+    Saved { result: FillUpResultView },
+    NotFound,
+    NoStartPoint,
+    Rejected { reason: FillUpRejectionView },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum DeleteFillUpResult {
+    Deleted,
+    NotFound,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -316,6 +335,26 @@ pub async fn add_fill_up(
     with_vault(&session, |vault| apply_fill_up(vault, input.into()))
 }
 
+/// Replaces fill-up `id` (any field, the fuel included) under the rules for a
+/// new entry, keeping its id; returns the recomputed result of that entry.
+#[tauri::command]
+pub async fn update_fill_up(
+    session: State<'_, VaultSession>,
+    id: u64,
+    input: FillUpInput,
+) -> Result<UpdateFillUpResult, String> {
+    with_vault(&session, |vault| apply_update(vault, id, input.into()))
+}
+
+/// Deletes fill-up `id` for good; its id is never reused.
+#[tauri::command]
+pub async fn delete_fill_up(
+    session: State<'_, VaultSession>,
+    id: u64,
+) -> Result<DeleteFillUpResult, String> {
+    with_vault(&session, |vault| apply_delete(vault, id))
+}
+
 /// Runs `f` on the unlocked vault; `Err` when the session is locked.
 fn with_vault<T>(
     session: &VaultSession,
@@ -388,6 +427,46 @@ fn apply_fill_up(
     Ok(AddFillUpResult::Saved {
         result: result.into(),
     })
+}
+
+fn apply_update(
+    vault: &mut UnlockedVault,
+    id: u64,
+    new: NewFillUp,
+) -> Result<UpdateFillUpResult, VaultError> {
+    let Some(start) = vault.data.start_point.clone() else {
+        return Ok(UpdateFillUpResult::NoStartPoint);
+    };
+    let fill_ups = match replace_fill_up(&start, &vault.data.fill_ups, id, new) {
+        Ok(fill_ups) => fill_ups,
+        Err(EditRejection::NotFound) => return Ok(UpdateFillUpResult::NotFound),
+        Err(EditRejection::Invalid(reason)) => {
+            return Ok(UpdateFillUpResult::Rejected {
+                reason: reason.into(),
+            })
+        }
+    };
+    let result = compute(&start, &fill_ups)
+        .into_iter()
+        .find(|(entry_id, _)| *entry_id == id)
+        .map(|(_, r)| r)
+        .expect("compute returns a result for every entry");
+    let mut next = vault.data.clone();
+    next.fill_ups = fill_ups;
+    vault.commit(next)?;
+    Ok(UpdateFillUpResult::Saved {
+        result: result.into(),
+    })
+}
+
+fn apply_delete(vault: &mut UnlockedVault, id: u64) -> Result<DeleteFillUpResult, VaultError> {
+    let Some(fill_ups) = remove_fill_up(&vault.data.fill_ups, id) else {
+        return Ok(DeleteFillUpResult::NotFound);
+    };
+    let mut next = vault.data.clone();
+    next.fill_ups = fill_ups;
+    vault.commit(next)?;
+    Ok(DeleteFillUpResult::Deleted)
 }
 
 #[cfg(test)]
@@ -870,5 +949,262 @@ mod tests {
                 }),
             }
         );
+    }
+
+    fn reopen(dir: &std::path::Path) -> UnlockedVault {
+        match crate::vault::unlock(dir, "correct horse").unwrap() {
+            crate::vault::UnlockOutcome::Unlocked(v) => v,
+            other => panic!("unexpected outcome: {other:?}"),
+        }
+    }
+
+    fn vault_bytes(dir: &std::path::Path) -> Vec<u8> {
+        std::fs::read(dir.join(crate::vault::VAULT_FILE)).expect("read vault file")
+    }
+
+    /// Start point, then an LPG top-up (id 1) and an LPG full tank (id 2).
+    fn vault_with_two_lpg_entries(dir: &std::path::Path) -> UnlockedVault {
+        let mut vault = new_vault(dir);
+        apply_start_point(&mut vault, start()).unwrap();
+        apply_fill_up(&mut vault, lpg("2026-01-03", 100_200, false)).unwrap();
+        apply_fill_up(&mut vault, lpg("2026-01-05", 100_400, true)).unwrap();
+        vault
+    }
+
+    #[test]
+    fn update_fill_up_result_serializes_to_frontend_shape() {
+        assert_eq!(
+            to_value(UpdateFillUpResult::Saved {
+                result: FillUpResultView::Consumption {
+                    litres_per_100km: 10.0,
+                    distance_km: 400,
+                    period_litres_cl: 4_000,
+                    period_cost_grosze: 12_000,
+                    price_per_litre_grosze: 300.0,
+                }
+            })
+            .unwrap(),
+            json!({
+                "kind": "saved",
+                "result": {
+                    "kind": "consumption",
+                    "litresPer100Km": 10.0,
+                    "distanceKm": 400,
+                    "periodLitresCl": 4_000,
+                    "periodCostGrosze": 12_000,
+                    "pricePerLitreGrosze": 300.0
+                }
+            })
+        );
+        assert_eq!(
+            to_value(UpdateFillUpResult::Saved {
+                result: FillUpResultView::TopUp {
+                    price_per_litre_grosze: 650.0
+                }
+            })
+            .unwrap(),
+            json!({"kind": "saved", "result": {"kind": "topUp", "pricePerLitreGrosze": 650.0}})
+        );
+        assert_eq!(
+            to_value(UpdateFillUpResult::NotFound).unwrap(),
+            json!({"kind": "notFound"})
+        );
+        assert_eq!(
+            to_value(UpdateFillUpResult::NoStartPoint).unwrap(),
+            json!({"kind": "noStartPoint"})
+        );
+        assert_eq!(
+            to_value(UpdateFillUpResult::Rejected {
+                reason: FillUpRejectionView::OrderConflict {
+                    date: "2026-01-05".into(),
+                    odometer_km: 100_400
+                }
+            })
+            .unwrap(),
+            json!({
+                "kind": "rejected",
+                "reason": {"kind": "orderConflict", "date": "2026-01-05", "odometerKm": 100_400}
+            })
+        );
+    }
+
+    #[test]
+    fn delete_fill_up_result_serializes_to_frontend_shape() {
+        assert_eq!(
+            to_value(DeleteFillUpResult::Deleted).unwrap(),
+            json!({"kind": "deleted"})
+        );
+        assert_eq!(
+            to_value(DeleteFillUpResult::NotFound).unwrap(),
+            json!({"kind": "notFound"})
+        );
+    }
+
+    #[test]
+    fn corrected_fill_up_keeps_its_id_and_is_saved() {
+        let dir = TempDir::new().unwrap();
+        let mut vault = vault_with_two_lpg_entries(dir.path());
+
+        // Entry 1 becomes a petrol full tank: both fuels are recomputed.
+        let corrected = NewFillUp {
+            fuel: Fuel::Petrol,
+            date: "2026-01-03".into(),
+            odometer_km: 100_200,
+            litres_cl: 4_000,
+            amount_grosze: 26_000,
+            full_tank: true,
+        };
+        assert_eq!(
+            apply_update(&mut vault, 1, corrected.clone()).unwrap(),
+            UpdateFillUpResult::Saved {
+                result: FillUpResultView::Consumption {
+                    litres_per_100km: 20.0,
+                    distance_km: 200,
+                    period_litres_cl: 4_000,
+                    period_cost_grosze: 26_000,
+                    price_per_litre_grosze: 650.0,
+                }
+            }
+        );
+        let ids: Vec<u64> = vault.data.fill_ups.iter().map(|f| f.id).collect();
+        assert_eq!(ids, vec![1, 2]);
+        assert_eq!(vault.data.fill_ups[0], corrected.with_id(1));
+        assert_eq!(vault.data.next_fill_up_id, 3);
+
+        let view = overview(&vault.data);
+        assert_eq!(
+            view.petrol.map(|v| v.history),
+            Some(vec![HistoryRow {
+                id: 1,
+                date: "2026-01-03".into(),
+                odometer_km: 100_200,
+                litres_cl: 4_000,
+                amount_grosze: 26_000,
+                full_tank: true,
+                result: FillUpResultView::Consumption {
+                    litres_per_100km: 20.0,
+                    distance_km: 200,
+                    period_litres_cl: 4_000,
+                    period_cost_grosze: 26_000,
+                    price_per_litre_grosze: 650.0,
+                },
+            }])
+        );
+        assert_eq!(
+            view.lpg.map(|v| v.history),
+            Some(vec![HistoryRow {
+                id: 2,
+                date: "2026-01-05".into(),
+                odometer_km: 100_400,
+                litres_cl: 4_000,
+                amount_grosze: 12_000,
+                full_tank: true,
+                result: FillUpResultView::Consumption {
+                    litres_per_100km: 10.0,
+                    distance_km: 400,
+                    period_litres_cl: 4_000,
+                    period_cost_grosze: 12_000,
+                    price_per_litre_grosze: 300.0,
+                },
+            }])
+        );
+
+        let reopened = reopen(dir.path());
+        assert_eq!(reopened.data, vault.data);
+    }
+
+    #[test]
+    fn refused_correction_changes_nothing() {
+        let dir = TempDir::new().unwrap();
+        let mut vault = vault_with_two_lpg_entries(dir.path());
+        let data_before = vault.data.clone();
+        let bytes_before = vault_bytes(dir.path());
+
+        assert_eq!(
+            apply_update(&mut vault, 99, lpg("2026-01-04", 100_300, true)).unwrap(),
+            UpdateFillUpResult::NotFound
+        );
+        assert_eq!(
+            apply_update(&mut vault, 1, lpg("2025-12-31", 100_200, false)).unwrap(),
+            UpdateFillUpResult::Rejected {
+                reason: FillUpRejectionView::DateBeforeStart
+            }
+        );
+        // Checked against the other entries: entry 2 already sits at 100 400.
+        assert_eq!(
+            apply_update(&mut vault, 1, lpg("2026-01-05", 100_400, false)).unwrap(),
+            UpdateFillUpResult::Rejected {
+                reason: FillUpRejectionView::SameFuelSameOdometer {
+                    date: "2026-01-05".into()
+                }
+            }
+        );
+        assert_eq!(vault.data, data_before);
+        assert_eq!(vault_bytes(dir.path()), bytes_before);
+        assert_eq!(reopen(dir.path()).data, data_before);
+    }
+
+    #[test]
+    fn correction_needs_start_point() {
+        let dir = TempDir::new().unwrap();
+        let mut vault = new_vault(dir.path());
+        let data_before = vault.data.clone();
+        let bytes_before = vault_bytes(dir.path());
+        assert_eq!(
+            apply_update(&mut vault, 1, lpg("2026-01-05", 100_400, true)).unwrap(),
+            UpdateFillUpResult::NoStartPoint
+        );
+        assert_eq!(vault.data, data_before);
+        assert_eq!(vault_bytes(dir.path()), bytes_before);
+    }
+
+    #[test]
+    fn deleted_fill_up_is_gone_for_good_and_its_id_is_not_reused() {
+        let dir = TempDir::new().unwrap();
+        let mut vault = vault_with_two_lpg_entries(dir.path());
+
+        assert_eq!(
+            apply_delete(&mut vault, 1).unwrap(),
+            DeleteFillUpResult::Deleted
+        );
+        let ids: Vec<u64> = vault.data.fill_ups.iter().map(|f| f.id).collect();
+        assert_eq!(ids, vec![2]);
+        assert_eq!(vault.data.next_fill_up_id, 3);
+        // Entry 2 now closes the period from the start point on its own.
+        assert_eq!(
+            overview(&vault.data).lpg.map(|v| v.summary),
+            Some(FuelSummaryView::Consumption {
+                latest: LatestConsumption {
+                    date: "2026-01-05".into(),
+                    odometer_km: 100_400,
+                    litres_per_100km: 10.0,
+                    distance_km: 400,
+                    period_cost_grosze: 12_000,
+                },
+                average: AverageConsumptionView {
+                    litres_per_100km: 10.0,
+                    distance_km: 400,
+                    litres_cl: 4_000,
+                    periods: 1,
+                },
+            })
+        );
+        assert_eq!(reopen(dir.path()).data, vault.data);
+
+        // Unknown (here: already deleted) id: nothing changes.
+        let data_before = vault.data.clone();
+        let bytes_before = vault_bytes(dir.path());
+        assert_eq!(
+            apply_delete(&mut vault, 1).unwrap(),
+            DeleteFillUpResult::NotFound
+        );
+        assert_eq!(vault.data, data_before);
+        assert_eq!(vault_bytes(dir.path()), bytes_before);
+
+        apply_fill_up(&mut vault, lpg("2026-01-07", 100_600, true)).unwrap();
+        let ids: Vec<u64> = vault.data.fill_ups.iter().map(|f| f.id).collect();
+        assert_eq!(ids, vec![2, 3]);
+        assert_eq!(vault.data.next_fill_up_id, 4);
+        assert_eq!(reopen(dir.path()).data, vault.data);
     }
 }

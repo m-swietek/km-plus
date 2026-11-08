@@ -91,6 +91,15 @@ export type AddFillUpResult =
   | { kind: "noStartPoint" }
   | { kind: "rejected"; reason: FillUpRejection };
 
+/** `result` is the recomputed result of the corrected entry. */
+export type UpdateFillUpResult =
+  | { kind: "saved"; result: FillUpResult }
+  | { kind: "notFound" }
+  | { kind: "noStartPoint" }
+  | { kind: "rejected"; reason: FillUpRejection };
+
+export type DeleteFillUpResult = { kind: "deleted" } | { kind: "notFound" };
+
 /**
  * `odometerKm` and `litresCl` are `u32` in the backend; a larger number fails argument
  * deserialization with an opaque `Err`, so callers check this before invoking and report the
@@ -108,6 +117,14 @@ export function setStartPoint(date: string, odometerKm: number): Promise<SetStar
 
 export function addFillUp(input: FillUpInput): Promise<AddFillUpResult> {
   return invoke<AddFillUpResult>("add_fill_up", { input });
+}
+
+export function updateFillUp(id: number, input: FillUpInput): Promise<UpdateFillUpResult> {
+  return invoke<UpdateFillUpResult>("update_fill_up", { id, input });
+}
+
+export function deleteFillUp(id: number): Promise<DeleteFillUpResult> {
+  return invoke<DeleteFillUpResult>("delete_fill_up", { id });
 }
 
 export const FUEL_LABELS: Record<Fuel, string> = { lpg: "Gaz", petrol: "Benzyna" };

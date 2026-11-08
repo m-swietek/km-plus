@@ -60,8 +60,12 @@ Rejestrowane w `src-tauri/src/lib.rs` (`generate_handler!`), zdefiniowane w `src
 | `fuel_overview` | — | `FuelOverview` (bez `kind`): `{ startPoint: { date, odometerKm } \| null, lpg: FuelView \| null, petrol: FuelView \| null }` (`lpg`/`petrol` są `null` wtedy i tylko wtedy, gdy `startPoint` jest `null`); `FuelView` = `{ summary: FuelSummaryView, history: HistoryRow[] }` (historia od najnowszego, tj. najwyższego przebiegu); `FuelSummaryView`: `noEntries`, `noClosedPeriod`, `consumption` (+ `latest`: `LatestConsumption`, `average`: `AverageConsumption`); `LatestConsumption` = `{ date, odometerKm, litresPer100Km, distanceKm, periodCostGrosze }`; `AverageConsumption` = `{ litresPer100Km, distanceKm, litresCl, periods }`; `HistoryRow` = `{ id, date, odometerKm, litresCl, amountGrosze, fullTank, result: FillUpResult }` (bez `fuel` — lista jest per paliwo). Kształt odpowiedzi jest liczony przy każdym wywołaniu i nie dotyka formatu sejfu (bez zmiany `format_version`). |
 | `set_start_point` | `date`, `odometerKm` | `SetStartPointResult`: `ok`, `alreadySet`, `invalid` (+ `reason`: `{ kind: "invalidDate" }` \| `{ kind: "odometerOutOfRange" }`) |
 | `add_fill_up` | `input`: `{ fuel: "lpg" \| "petrol", date, odometerKm, litresCl, amountGrosze, fullTank }` | `AddFillUpResult`: `saved` (+ `result`: `FillUpResult`), `noStartPoint`, `rejected` (+ `reason`: `FillUpRejection`) |
+| `update_fill_up` | `id` (`HistoryRow.id`), `input` (jak w `add_fill_up`) | `UpdateFillUpResult`: `saved` (+ `result`: `FillUpResult` poprawionego wpisu), `notFound`, `noStartPoint`, `rejected` (+ `reason`: `FillUpRejection`; reguły dodawania wobec wszystkich wpisów poza poprawianym). Wpis zachowuje `id`, także przy zmianie paliwa. Odrzucenie i `notFound` niczego nie zapisują. |
+| `delete_fill_up` | `id` (`HistoryRow.id`) | `DeleteFillUpResult`: `deleted`, `notFound`. Usunięcie jest ostateczne; usunięte `id` nie jest używane ponownie. `notFound` niczego nie zapisuje. |
 
-Typy zagnieżdżone w `add_fill_up`:
+`update_fill_up` i `delete_fill_up` zmieniają tylko listę `fill_ups` i nie zmieniają formatu sejfu (bez zmiany `format_version`, `next_fill_up_id` bez zmian).
+
+Typy zagnieżdżone w `add_fill_up` i `update_fill_up` (wspólne dla obu komend):
 
 - `FillUpResult`: `consumption` (+ `litresPer100Km`, `distanceKm`, `periodLitresCl`, `periodCostGrosze`, `pricePerLitreGrosze`), `topUp` (+ `pricePerLitreGrosze`).
 - `FillUpRejection`: `invalidDate`, `odometerOutOfRange`, `litresOutOfRange`, `amountOutOfRange`, `dateBeforeStart`, `odometerNotAfterStart`, `sameFuelSameOdometer` (+ `date`), `orderConflict` (+ `date`, `odometerKm`).

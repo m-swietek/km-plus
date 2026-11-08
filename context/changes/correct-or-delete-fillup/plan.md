@@ -317,17 +317,17 @@ Ryzyka scalenia z równoległym S-05 (`plan-service`): wspólne pliki `src/AppSh
 
 #### Automated
 
-- [x] 1.1 Testy domeny przechodzą: `cargo test fuel::tests` w `src-tauri/`
-- [x] 1.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
-- [x] 1.3 Brak ostrzeżeń kompilacji o martwym kodzie: `cargo check` w `src-tauri/`
+- [x] 1.1 Testy domeny przechodzą: `cargo test fuel::tests` w `src-tauri/` — 36fdd33
+- [x] 1.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/` — 36fdd33
+- [x] 1.3 Brak ostrzeżeń kompilacji o martwym kodzie: `cargo check` w `src-tauri/` — 36fdd33
 
 ### Phase 2: Kontrakt — `update_fill_up` i `delete_fill_up`
 
 #### Automated
 
-- [ ] 2.1 Testy kształtu JSON i komend przechodzą: `cargo test fuel::commands` w `src-tauri/`
-- [ ] 2.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
-- [ ] 2.3 Frontend kompiluje się z nowymi typami: `npm run build`
+- [x] 2.1 Testy kształtu JSON i komend przechodzą: `cargo test fuel::commands` w `src-tauri/`
+- [x] 2.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
+- [x] 2.3 Frontend kompiluje się z nowymi typami: `npm run build`
 
 ### Phase 3: UI — tryb edycji, akcje wiersza, panel statusu
 

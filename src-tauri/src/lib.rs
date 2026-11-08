@@ -1,7 +1,9 @@
 mod fuel;
 mod vault;
 
-use fuel::commands::{add_fill_up, fuel_overview, set_start_point};
+use fuel::commands::{
+    add_fill_up, update_fill_up, delete_fill_up, fuel_overview, set_start_point,
+};
 use vault::commands::{
     vault_restore_backup, vault_setup, vault_status, vault_unlock, VaultSession,
 };
@@ -19,7 +21,9 @@ pub fn run() {
             vault_restore_backup,
             fuel_overview,
             set_start_point,
-            add_fill_up
+            add_fill_up,
+            update_fill_up,
+            delete_fill_up
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
