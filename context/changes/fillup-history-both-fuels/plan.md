@@ -300,11 +300,11 @@ Brak zmiany formatu sejfu (pozostaje v2, `vault/data.rs:12`) — brak migratora 
 
 #### Automated
 
-- [x] 4.1 Workflow wydania 0.1.5 kończy się sukcesem, krok „Rust tests” zielony: `gh run view <id>` na runie `release.yml`
-- [x] 4.2 Draft `app-v0.1.5` zawiera instalator, `.sig` i `latest.json`: `gh release view app-v0.1.5`
+- [x] 4.1 Workflow wydania 0.1.5 kończy się sukcesem, krok „Rust tests” zielony: `gh run view <id>` na runie `release.yml` — b65e623
+- [x] 4.2 Draft `app-v0.1.5` zawiera instalator, `.sig` i `latest.json`: `gh release view app-v0.1.5` — b65e623
 
 #### Manual
 
-- [x] 4.3 Przed aktualizacją: SHA-256 `%APPDATA%\io.github.m-swietek.kmplus\kmplus.vault` zanotowany na zainstalowanej 0.1.4
-- [x] 4.4 Aktualizacja 0.1.4 → 0.1.5 przez baner; to samo hasło odblokowuje; SHA-256 `kmplus.vault` po odblokowaniu bez zapisu identyczny jak przed aktualizacją; nie powstaje plik `pre-v*`
-- [x] 4.5 Istniejące tankowania widoczne w listach historii z wynikami; karty pokazują ostatni okres i średnią; przebieg zapisany w `change.md` i `deploy-plan.md`
+- [x] 4.3 Przed aktualizacją: SHA-256 `%APPDATA%\io.github.m-swietek.kmplus\kmplus.vault` zanotowany na zainstalowanej 0.1.4 — b65e623
+- [x] 4.4 Aktualizacja 0.1.4 → 0.1.5 przez baner; to samo hasło odblokowuje; SHA-256 `kmplus.vault` po odblokowaniu bez zapisu identyczny jak przed aktualizacją; nie powstaje plik `pre-v*` — b65e623
+- [x] 4.5 Istniejące tankowania widoczne w listach historii z wynikami; karty pokazują ostatni okres i średnią; przebieg zapisany w `change.md` i `deploy-plan.md` — b65e623
