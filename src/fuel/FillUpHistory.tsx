@@ -11,7 +11,7 @@ type Props = {
 export function FillUpHistory({ fuel, rows }: Props) {
   return (
     <section className="fuel-history">
-      <h2>{FUEL_LABELS[fuel]}</h2>
+      <h2>Historia — {FUEL_LABELS[fuel]}</h2>
       {rows.length === 0 ? (
         <p className="fuel-card-meta">Brak tankowań</p>
       ) : (

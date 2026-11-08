@@ -283,6 +283,8 @@ fn fuel_report(fuel: Fuel, fill_ups: &[FillUp], results: &[(u64, FillUpResult)])
         };
     }
 
+    // Closed periods run back to back from the start point, so this sum is
+    // at most MAX_ODOMETER_KM and cannot overflow u32.
     let mut distance_km: u32 = 0;
     let mut litres_cl: u64 = 0;
     let mut periods: u32 = 0;
