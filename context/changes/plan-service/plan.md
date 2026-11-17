@@ -380,17 +380,17 @@ Rejestr jednego auta to kilkanaście wpisów; sortowanie przy każdym odczycie b
 
 #### Automated
 
-- [x] 2.1 Testy komend i kształtu JSON przechodzą: `cargo test service::commands` w `src-tauri/`
-- [x] 2.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/`
-- [x] 2.3 Brak ostrzeżeń kompilacji: `cargo check` w `src-tauri/`
-- [x] 2.4 Frontend kompiluje się z nowymi typami: `npm run build`
+- [x] 2.1 Testy komend i kształtu JSON przechodzą: `cargo test service::commands` w `src-tauri/` — 40b52e2
+- [x] 2.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/` — 40b52e2
+- [x] 2.3 Brak ostrzeżeń kompilacji: `cargo check` w `src-tauri/` — 40b52e2
+- [x] 2.4 Frontend kompiluje się z nowymi typami: `npm run build` — 40b52e2
 
 ### Phase 3: UI rejestru serwisów i zakładki
 
 #### Automated
 
-- [ ] 3.1 Frontend kompiluje się bez nieużywanych importów: `npm run build`
-- [ ] 3.2 Testy backendu nadal przechodzą: `cargo test` w `src-tauri/`
+- [x] 3.1 Frontend kompiluje się bez nieużywanych importów: `npm run build`
+- [x] 3.2 Testy backendu nadal przechodzą: `cargo test` w `src-tauri/`
 
 #### Manual
 
