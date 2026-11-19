@@ -389,18 +389,18 @@ Rejestr jednego auta to kilkanaście wpisów; sortowanie przy każdym odczycie b
 
 #### Automated
 
-- [x] 3.1 Frontend kompiluje się bez nieużywanych importów: `npm run build`
-- [x] 3.2 Testy backendu nadal przechodzą: `cargo test` w `src-tauri/`
+- [x] 3.1 Frontend kompiluje się bez nieużywanych importów: `npm run build` — b4aedb2
+- [x] 3.2 Testy backendu nadal przechodzą: `cargo test` w `src-tauri/` — b4aedb2
 
 #### Manual
 
-- [ ] 3.3 `npm run tauri dev` na czystym katalogu danych (prawdziwy `kmplus.vault` i pliki obok przeniesione na bok przed testem i przywrócone po nim, z porównaniem SHA-256): po haśle i punkcie startowym (2026-01-01, 100 000 km) widać zakładkę „Paliwo” jak dotąd; „Serwisy” pokazuje „Brak zaplanowanych serwisów”
-- [ ] 3.4 Dodanie „Przegląd techniczny” (termin 2027-03-01), „Wymiana oleju” (115 000 km, cykliczny co 15 000 km, notatka „5W-30”), „Rozrząd” (180 000 km i 2028-06-01, cykliczny co 90 000 km i co 48 mies.) oraz „Płyn hamulcowy” (termin 2026-10-01, w przeszłości — zapisany bez ostrzeżenia): kolejność listy Płyn hamulcowy, Przegląd techniczny, Rozrząd, Wymiana oleju; progi, cykliczność i notatka widoczne
-- [ ] 3.5 Zapis bez progu → „Podaj próg przebiegu, termin albo oba.”; cykliczny z terminem bez liczby miesięcy → komunikat o interwale; dane formularza zostają
-- [ ] 3.6 „Edytuj” na „Wymiana oleju”: próg 116 000 km, odznaczony „Cykliczny” → wiersz bez cykliczności, ten sam wpis (nie nowy); „Anuluj” w edycji nie zmienia wpisu
-- [ ] 3.7 „Usuń” przy „Płyn hamulcowy” pokazuje „Usunąć serwis „Płyn hamulcowy”?”; „Anuluj” zostawia wpis; potwierdzające „Usuń” usuwa „Płyn hamulcowy”
-- [ ] 3.8 Przełączanie zakładek nie kasuje wpisanych pól formularza tankowania ani serwisu; dodanie tankowania nadal działa
-- [ ] 3.9 Po restarcie i odblokowaniu rejestr identyczny; tryb ciemny i wąskie okno czytelne
+- [x] 3.3 `npm run tauri dev` na czystym katalogu danych (prawdziwy `kmplus.vault` i pliki obok przeniesione na bok przed testem i przywrócone po nim, z porównaniem SHA-256): po haśle i punkcie startowym (2026-01-01, 100 000 km) widać zakładkę „Paliwo” jak dotąd; „Serwisy” pokazuje „Brak zaplanowanych serwisów”
+- [x] 3.4 Dodanie „Przegląd techniczny” (termin 2027-03-01), „Wymiana oleju” (115 000 km, cykliczny co 15 000 km, notatka „5W-30”), „Rozrząd” (180 000 km i 2028-06-01, cykliczny co 90 000 km i co 48 mies.) oraz „Płyn hamulcowy” (termin 2026-10-01, w przeszłości — zapisany bez ostrzeżenia): kolejność listy Płyn hamulcowy, Przegląd techniczny, Rozrząd, Wymiana oleju; progi, cykliczność i notatka widoczne
+- [x] 3.5 Zapis bez progu → „Podaj próg przebiegu, termin albo oba.”; cykliczny z terminem bez liczby miesięcy → komunikat o interwale; dane formularza zostają
+- [x] 3.6 „Edytuj” na „Wymiana oleju”: próg 116 000 km, odznaczony „Cykliczny” → wiersz bez cykliczności, ten sam wpis (nie nowy); „Anuluj” w edycji nie zmienia wpisu
+- [x] 3.7 „Usuń” przy „Płyn hamulcowy” pokazuje „Usunąć serwis „Płyn hamulcowy”?”; „Anuluj” zostawia wpis; potwierdzające „Usuń” usuwa „Płyn hamulcowy”
+- [x] 3.8 Przełączanie zakładek nie kasuje wpisanych pól formularza tankowania ani serwisu; dodanie tankowania nadal działa
+- [x] 3.9 Po restarcie i odblokowaniu rejestr identyczny; tryb ciemny i wąskie okno czytelne
 
 ### Phase 4: Wydanie i dowód migracji v2 → v3
 
