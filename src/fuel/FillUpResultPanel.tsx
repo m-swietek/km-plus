@@ -1,30 +1,38 @@
-import { FUEL_LABELS, type Fuel, type FillUpResult } from "./api";
+import { FUEL_LABELS } from "./api";
 import { formatConsumption, formatDate, formatKm, formatMoney, formatPricePerLitre } from "./format";
+import type { Notice } from "./useFillUpEditing";
 
 type Props = {
-  fuel: Fuel;
-  date: string;
-  result: FillUpResult;
+  notice: Notice;
 };
 
-/** Result of the fill-up that was just saved. */
-export function FillUpResultPanel({ fuel, date, result }: Props) {
+const TITLES: Record<Notice["kind"], string> = {
+  added: "Zapisano",
+  updated: "Poprawiono",
+  deleted: "Usunięto",
+};
+
+/** Status of the last action: the saved or corrected entry with its result, or the deleted entry. */
+export function FillUpResultPanel({ notice }: Props) {
   return (
     <div className="fill-up-result" role="status">
       <p className="fill-up-result-title">
-        Zapisano: {FUEL_LABELS[fuel]}, {formatDate(date)}
+        {TITLES[notice.kind]}: {FUEL_LABELS[notice.fuel]}, {formatDate(notice.date)}
+        {notice.kind === "deleted" && <>, {formatKm(notice.odometerKm)}</>}
       </p>
-      {result.kind === "consumption" ? (
-        <p>
-          Spalanie: <strong>{formatConsumption(result.litresPer100Km)}</strong> na {formatKm(result.distanceKm)} ·
-          Koszt okresu: {formatMoney(result.periodCostGrosze)} · Cena: {formatPricePerLitre(result.pricePerLitreGrosze)}
-        </p>
-      ) : (
-        <p>
-          Dolewka — brak wyniku spalania (okres zamknie tankowanie do pełna) · Cena:{" "}
-          {formatPricePerLitre(result.pricePerLitreGrosze)}
-        </p>
-      )}
+      {notice.kind !== "deleted" &&
+        (notice.result.kind === "consumption" ? (
+          <p>
+            Spalanie: <strong>{formatConsumption(notice.result.litresPer100Km)}</strong> na{" "}
+            {formatKm(notice.result.distanceKm)} · Koszt okresu: {formatMoney(notice.result.periodCostGrosze)} · Cena:{" "}
+            {formatPricePerLitre(notice.result.pricePerLitreGrosze)}
+          </p>
+        ) : (
+          <p>
+            Dolewka — brak wyniku spalania (okres zamknie tankowanie do pełna) · Cena:{" "}
+            {formatPricePerLitre(notice.result.pricePerLitreGrosze)}
+          </p>
+        ))}
     </div>
   );
 }

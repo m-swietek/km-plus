@@ -25,6 +25,21 @@ export function parseKm(text: string): number | null {
   return Number.isSafeInteger(value) ? value : null;
 }
 
+/**
+ * Inverse of `parseDecimal2` for prefilling a field, with integer maths only:
+ * `4635` → `"46,35"`, `2000` → `"20,00"`, `5` → `"0,05"`.
+ */
+export function formatDecimal2Input(hundredths: number): string {
+  const whole = Math.floor(hundredths / 100);
+  const fraction = String(hundredths % 100).padStart(2, "0");
+  return `${whole},${fraction}`;
+}
+
+/** Inverse of `parseKm` for prefilling a field: digits only, `100400` → `"100400"`. */
+export function formatKmInput(km: number): string {
+  return String(km);
+}
+
 /** True for a `YYYY-MM-DD` string as produced by `<input type="date">`; calendar validity is the backend's job. */
 export function isIsoDate(text: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(text);

@@ -12,6 +12,7 @@ import { formatConsumption, formatDate, formatKm } from "./fuel/format";
 import { FillUpForm } from "./fuel/FillUpForm";
 import { FillUpHistory } from "./fuel/FillUpHistory";
 import { StartPointScreen } from "./fuel/StartPointScreen";
+import { useFillUpEditing } from "./fuel/useFillUpEditing";
 
 type State =
   | { kind: "loading" }
@@ -21,6 +22,7 @@ type State =
 /** Application shell shown once the vault is unlocked: start point first, then fuel cards, the fill-up form and per-fuel histories. */
 export function AppShell() {
   const [state, setState] = useState<State>({ kind: "loading" });
+  const fillUpEditing = useFillUpEditing();
 
   const fetchOverview = useCallback(async () => {
     try {
@@ -74,11 +76,44 @@ export function AppShell() {
             <FuelCard fuel="petrol" view={overview.petrol} />
           </div>
           {/* Refreshing in place keeps the form mounted, so its fuel, date and result survive. */}
-          <FillUpForm startPoint={overview.startPoint} onSaved={fetchOverview} onNoStartPoint={load} />
+          <FillUpForm
+            startPoint={overview.startPoint}
+            onSaved={fetchOverview}
+            onNoStartPoint={load}
+            editing={fillUpEditing.editing}
+            notice={fillUpEditing.notice}
+            onCancelEditing={fillUpEditing.cancelEditing}
+            onClearNotice={fillUpEditing.clearNotice}
+            onAdded={fillUpEditing.reportAdded}
+            onUpdated={fillUpEditing.reportUpdated}
+            onGone={fillUpEditing.reportGone}
+          />
           {/* Same overview state as the cards, so `fetchOverview` after a save refreshes both. */}
           <div className="fuel-histories">
-            <FillUpHistory fuel="lpg" rows={overview.lpg?.history ?? []} />
-            <FillUpHistory fuel="petrol" rows={overview.petrol?.history ?? []} />
+            <FillUpHistory
+              fuel="lpg"
+              rows={overview.lpg?.history ?? []}
+              editingId={fillUpEditing.editing?.row.id ?? null}
+              confirmingId={fillUpEditing.confirmingId}
+              onEdit={fillUpEditing.startEditing}
+              onStartConfirming={fillUpEditing.startConfirming}
+              onCancelConfirming={fillUpEditing.cancelConfirming}
+              onDeleted={fillUpEditing.reportDeleted}
+              onGone={fillUpEditing.reportGone}
+              onChanged={fetchOverview}
+            />
+            <FillUpHistory
+              fuel="petrol"
+              rows={overview.petrol?.history ?? []}
+              editingId={fillUpEditing.editing?.row.id ?? null}
+              confirmingId={fillUpEditing.confirmingId}
+              onEdit={fillUpEditing.startEditing}
+              onStartConfirming={fillUpEditing.startConfirming}
+              onCancelConfirming={fillUpEditing.cancelConfirming}
+              onDeleted={fillUpEditing.reportDeleted}
+              onGone={fillUpEditing.reportGone}
+              onChanged={fetchOverview}
+            />
           </div>
         </section>
       );

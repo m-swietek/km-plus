@@ -4,23 +4,42 @@ import {
   FUEL_LABELS,
   U32_MAX,
   addFillUp,
+  updateFillUp,
   type Fuel,
   type FillUpRejection,
   type FillUpResult,
   type StartPointView,
 } from "./api";
 import { FillUpResultPanel } from "./FillUpResultPanel";
-import { formatDate, formatKm, isIsoDate, parseDecimal2, parseKm, todayIso } from "./format";
+import {
+  formatDate,
+  formatDecimal2Input,
+  formatKm,
+  formatKmInput,
+  isIsoDate,
+  parseDecimal2,
+  parseKm,
+  todayIso,
+} from "./format";
+import { NOT_FOUND_MESSAGE, type Editing, type Notice } from "./useFillUpEditing";
 
 type Props = {
   startPoint: StartPointView;
-  /** A fill-up was saved; the shell refreshes the fuel cards. */
+  /** Data changed (or turned out stale); the shell refreshes the fuel cards and histories. */
   onSaved: () => void;
   /** The backend has no start point after all; the shell re-reads its state. */
   onNoStartPoint: () => void;
+  /** Entry being corrected; `null` is the add mode. */
+  editing: Editing | null;
+  /** Status of the last action, shown under the form. */
+  notice: Notice | null;
+  onCancelEditing: () => void;
+  onClearNotice: () => void;
+  onAdded: (fuel: Fuel, date: string, result: FillUpResult) => void;
+  onUpdated: (fuel: Fuel, date: string, result: FillUpResult) => void;
+  /** The corrected entry no longer exists in the backend. */
+  onGone: (id: number) => void;
 };
-
-type Saved = { fuel: Fuel; date: string; result: FillUpResult };
 
 function rejectionMessage(reason: FillUpRejection, start: StartPointView): string {
   switch (reason.kind) {
@@ -43,8 +62,22 @@ function rejectionMessage(reason: FillUpRejection, start: StartPointView): strin
   }
 }
 
-/** New fill-up form; shows the computed result of the entry it just saved. */
-export function FillUpForm({ startPoint, onSaved, onNoStartPoint }: Props) {
+/**
+ * Fill-up form for adding a new entry or, while `editing` is set, correcting an existing one;
+ * shows the status of the last action under it.
+ */
+export function FillUpForm({
+  startPoint,
+  onSaved,
+  onNoStartPoint,
+  editing,
+  notice,
+  onCancelEditing,
+  onClearNotice,
+  onAdded,
+  onUpdated,
+  onGone,
+}: Props) {
   const [fuel, setFuel] = useState<Fuel>("lpg");
   const [date, setDate] = useState(todayIso);
   const [odometer, setOdometer] = useState("");
@@ -53,7 +86,33 @@ export function FillUpForm({ startPoint, onSaved, onNoStartPoint }: Props) {
   const [fullTank, setFullTank] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState<Saved | null>(null);
+  /** The `editing` value the fields were last loaded from. */
+  const [loaded, setLoaded] = useState<Editing | null>(null);
+
+  /** Loads the fields from an entry, or returns to the add mode (fuel stays, date is today, rest empty). */
+  function loadFields(next: Editing | null) {
+    setLoaded(next);
+    setError("");
+    if (next) {
+      setFuel(next.fuel);
+      setDate(next.row.date);
+      setOdometer(formatKmInput(next.row.odometerKm));
+      setLitres(formatDecimal2Input(next.row.litresCl));
+      setAmount(formatDecimal2Input(next.row.amountGrosze));
+      setFullTank(next.row.fullTank);
+    } else {
+      setDate(todayIso());
+      setOdometer("");
+      setLitres("");
+      setAmount("");
+      setFullTank(true);
+    }
+  }
+
+  // Entering, switching or leaving edit mode (a new `editing` object) reloads the fields.
+  if (editing !== loaded) {
+    loadFields(editing);
+  }
 
   const odometerKm = parseKm(odometer);
   const litresCl = parseDecimal2(litres);
@@ -64,7 +123,7 @@ export function FillUpForm({ startPoint, onSaved, onNoStartPoint }: Props) {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!canSubmit || odometerKm === null || litresCl === null || amountGrosze === null) return;
-    setSaved(null);
+    onClearNotice();
     // Values above u32 would fail argument deserialization; they are out of range either way.
     if (odometerKm > U32_MAX) {
       setError(rejectionMessage({ kind: "odometerOutOfRange" }, startPoint));
@@ -74,26 +133,50 @@ export function FillUpForm({ startPoint, onSaved, onNoStartPoint }: Props) {
       setError(rejectionMessage({ kind: "litresOutOfRange" }, startPoint));
       return;
     }
+    const input = { fuel, date, odometerKm, litresCl, amountGrosze, fullTank };
     setBusy(true);
     setError("");
     try {
-      const result = await addFillUp({ fuel, date, odometerKm, litresCl, amountGrosze, fullTank });
-      switch (result.kind) {
-        case "saved":
-          setSaved({ fuel, date, result: result.result });
-          // Fuel and date stay: the next entry is often the other fuel on the same day.
-          setOdometer("");
-          setLitres("");
-          setAmount("");
-          setFullTank(true);
-          onSaved();
-          break;
-        case "rejected":
-          setError(rejectionMessage(result.reason, startPoint));
-          break;
-        case "noStartPoint":
-          onNoStartPoint();
-          return;
+      if (editing) {
+        const result = await updateFillUp(editing.row.id, input);
+        switch (result.kind) {
+          case "saved":
+            // Ending the edit reloads the fields into the add mode.
+            onUpdated(fuel, date, result.result);
+            onSaved();
+            break;
+          case "notFound":
+            loadFields(null);
+            onGone(editing.row.id);
+            setError(NOT_FOUND_MESSAGE);
+            onSaved();
+            break;
+          case "rejected":
+            setError(rejectionMessage(result.reason, startPoint));
+            break;
+          case "noStartPoint":
+            onNoStartPoint();
+            return;
+        }
+      } else {
+        const result = await addFillUp(input);
+        switch (result.kind) {
+          case "saved":
+            onAdded(fuel, date, result.result);
+            // Fuel and date stay: the next entry is often the other fuel on the same day.
+            setOdometer("");
+            setLitres("");
+            setAmount("");
+            setFullTank(true);
+            onSaved();
+            break;
+          case "rejected":
+            setError(rejectionMessage(result.reason, startPoint));
+            break;
+          case "noStartPoint":
+            onNoStartPoint();
+            return;
+        }
       }
     } catch (err) {
       setError(errorMessage(err));
@@ -103,7 +186,7 @@ export function FillUpForm({ startPoint, onSaved, onNoStartPoint }: Props) {
 
   return (
     <section className="fill-up">
-      <h2>Dodaj tankowanie</h2>
+      <h2>{editing ? "Popraw tankowanie" : "Dodaj tankowanie"}</h2>
       <form className="gate-form" onSubmit={handleSubmit}>
         <fieldset className="fuel-choice" disabled={busy}>
           <legend>Paliwo</legend>
@@ -172,11 +255,22 @@ export function FillUpForm({ startPoint, onSaved, onNoStartPoint }: Props) {
             {error}
           </p>
         )}
-        <button type="submit" disabled={!canSubmit}>
-          {busy ? "Zapisywanie…" : "Zapisz tankowanie"}
-        </button>
+        {editing ? (
+          <div className="fill-up-actions">
+            <button type="submit" disabled={!canSubmit}>
+              {busy ? "Zapisywanie…" : "Zapisz zmiany"}
+            </button>
+            <button type="button" disabled={busy} onClick={onCancelEditing}>
+              Anuluj
+            </button>
+          </div>
+        ) : (
+          <button type="submit" disabled={!canSubmit}>
+            {busy ? "Zapisywanie…" : "Zapisz tankowanie"}
+          </button>
+        )}
       </form>
-      {saved && <FillUpResultPanel fuel={saved.fuel} date={saved.date} result={saved.result} />}
+      {notice && <FillUpResultPanel notice={notice} />}
     </section>
   );
 }

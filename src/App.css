@@ -239,6 +239,47 @@ input[type="checkbox"] {
   font-weight: 600;
 }
 
+.fill-up-actions {
+  display: flex;
+  gap: 0.5em;
+}
+
+.fill-up-actions button {
+  flex: 1;
+}
+
+.fuel-history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-top: 0.4em;
+}
+
+.fuel-history-actions button {
+  padding: 0.25em 0.8em;
+}
+
+.fuel-history-row-editing {
+  margin: 0 -0.5em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  border-radius: 6px;
+  background-color: rgba(57, 108, 216, 0.1);
+  box-shadow: inset 3px 0 0 #396cd8;
+}
+
+.fuel-history-row-editing:first-child {
+  padding-top: 0.5em;
+}
+
+.fuel-history-confirm {
+  font-weight: 600;
+}
+
+.fuel-history-danger {
+  color: #c62828;
+}
+
 @media (max-width: 30em) {
   .fuel-cards,
   .fuel-histories {
@@ -277,5 +318,13 @@ input[type="checkbox"] {
 
   .fuel-history-row {
     border-top-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .fuel-history-row-editing {
+    background-color: rgba(57, 108, 216, 0.25);
+  }
+
+  .fuel-history-danger {
+    color: #ff8a80;
   }
 }
