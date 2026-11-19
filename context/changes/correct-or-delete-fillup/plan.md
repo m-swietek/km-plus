@@ -351,11 +351,11 @@ Ryzyka scalenia z równoległym S-05 (`plan-service`): wspólne pliki `src/AppSh
 
 #### Automated
 
-- [x] 4.1 Workflow wydania kończy się sukcesem, krok „Rust tests” zielony: `gh run view <id>` na runie `release.yml`
-- [x] 4.2 Draft wydania zawiera instalator, `.sig` i `latest.json`: `gh release view app-v<wersja>`
+- [x] 4.1 Workflow wydania kończy się sukcesem, krok „Rust tests” zielony: `gh run view <id>` na runie `release.yml` — f8edec5
+- [x] 4.2 Draft wydania zawiera instalator, `.sig` i `latest.json`: `gh release view app-v<wersja>` — f8edec5
 
 #### Manual
 
-- [x] 4.3 Przed aktualizacją: katalog danych zawiera prawdziwy sejf (rozmiar i SHA-256 zgodne z ostatnim zapisanym dowodem — notatką z Fazy 3 albo, jeśli w międzyczasie wydano S-05, dowodem z jego wydania w `deploy-plan.md`), SHA-256 `kmplus.vault` zanotowany na zainstalowanej wersji
-- [x] 4.4 Aktualizacja przez baner; to samo hasło odblokowuje; SHA-256 `kmplus.vault` po odblokowaniu bez zapisu identyczny jak przed aktualizacją; nie powstaje nowy plik `pre-v*`
-- [x] 4.5 Na prawdziwych danych: zanotowane wartości kart; dodana dolewka testowa (dzisiejsza data, przebieg powyżej ostatniego znanego) poprawiona przez „Edytuj” (panel „Poprawiono…”), potem usunięta z potwierdzeniem (panel „Usunięto…”); karty i historie wracają do zanotowanych wartości; przebieg zapisany w `change.md` i `deploy-plan.md`
+- [x] 4.3 Przed aktualizacją: katalog danych zawiera prawdziwy sejf (rozmiar i SHA-256 zgodne z ostatnim zapisanym dowodem — notatką z Fazy 3 albo, jeśli w międzyczasie wydano S-05, dowodem z jego wydania w `deploy-plan.md`), SHA-256 `kmplus.vault` zanotowany na zainstalowanej wersji — f8edec5
+- [x] 4.4 Aktualizacja przez baner; to samo hasło odblokowuje; SHA-256 `kmplus.vault` po odblokowaniu bez zapisu identyczny jak przed aktualizacją; nie powstaje nowy plik `pre-v*` — f8edec5
+- [x] 4.5 Na prawdziwych danych: zanotowane wartości kart; dodana dolewka testowa (dzisiejsza data, przebieg powyżej ostatniego znanego) poprawiona przez „Edytuj” (panel „Poprawiono…”), potem usunięta z potwierdzeniem (panel „Usunięto…”); karty i historie wracają do zanotowanych wartości; przebieg zapisany w `change.md` i `deploy-plan.md` — f8edec5
