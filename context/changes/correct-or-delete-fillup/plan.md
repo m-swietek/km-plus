@@ -333,19 +333,19 @@ Ryzyka scalenia z równoległym S-05 (`plan-service`): wspólne pliki `src/AppSh
 
 #### Automated
 
-- [x] 3.1 Frontend kompiluje się bez nieużywanych importów: `npm run build`
-- [x] 3.2 Testy backendu nadal przechodzą: `cargo test` w `src-tauri/`
+- [x] 3.1 Frontend kompiluje się bez nieużywanych importów: `npm run build` — 9509d98
+- [x] 3.2 Testy backendu nadal przechodzą: `cargo test` w `src-tauri/` — 9509d98
 
 #### Manual
 
-- [x] 3.3 Przed testem prawdziwe pliki z `%APPDATA%\io.github.m-swietek.kmplus\` przeniesione na bok z zanotowanym SHA-256 `kmplus.vault`; `npm run tauri dev` na pustym katalogu; scenariusz bazowy z S-03 wpisany: start 2026-01-01, 100 000 km; A gaz dolewka 2026-01-03, 100 200 km, 20 l, 60 zł; B gaz pełny 2026-01-05, 100 400 km, 20 l, 60 zł; C benzyna pełny 2026-01-06, 100 500 km, 5 l, 32,50 zł; D gaz pełny 2026-01-10, 100 900 km, 45 l, 135 zł — karta Gaz 9,00 l/100 km, średnio 9,44 l/100 km na 900 km
-- [x] 3.4 „Edytuj” przy B wypełnia formularz (Gaz, 2026-01-05, 100400, 20,00, 60,00, do pełna) z nagłówkiem „Popraw tankowanie”; „Anuluj” wraca do „Dodaj tankowanie” bez zmian w danych; „Zapisz zmiany” bez zmian pól jest przyjęte, panel „Poprawiono: Gaz, 05.01.2026” z 10,00 l/100 km na 400 km
-- [x] 3.5 Poprawka B na 30 l: wiersz B 12,50 l/100 km na 400 km, koszt okresu 120,00 zł, cena 2,00 zł/l; karta Gaz 9,00 l/100 km, średnio 10,56 l/100 km na 900 km
-- [x] 3.6 Poprawka A z gazu na benzynę: A przechodzi do listy Benzyna; karta Benzyna 5,00 l/100 km, średnio 5,00 l/100 km na 500 km (wiersz C: koszt okresu 92,50 zł); karta Gaz 9,00 l/100 km, średnio 8,33 l/100 km na 900 km (wiersz B: 7,50 l/100 km, koszt okresu 60,00 zł)
-- [x] 3.7 Poprawka C z przebiegiem 100 950 km jest odrzucona komunikatem „Wpis koliduje z tankowaniem z 10.01.2026 przy 100 900 km (przebieg i data muszą rosnąć razem).”, formularz zostaje w trybie edycji, dane bez zmian
-- [x] 3.8 „Usuń” przy B pokazuje „Usunąć tankowanie z 05.01.2026, 100 400 km?”; „Anuluj” zostawia wiersz; potwierdzone usunięcie: karta Gaz 5,00 l/100 km, średnio 5,00 l/100 km na 900 km, wiersz D koszt okresu 135,00 zł, panel „Usunięto: Gaz, 05.01.2026, 100 400 km”
-- [x] 3.9 „Edytuj” przy D, potem potwierdzone „Usuń” przy D: formularz wraca do trybu dodawania, karta Gaz „Brak wpisów”, lista Gaz „Brak tankowań”, panel „Usunięto: Gaz, 10.01.2026, 100 900 km”
-- [x] 3.10 Po restarcie i odblokowaniu widok identyczny; tryb ciemny i wąskie okno czytelne; po teście prawdziwe pliki przywrócone, SHA-256 `kmplus.vault` równy zanotowanemu przed testem
+- [x] 3.3 Przed testem prawdziwe pliki z `%APPDATA%\io.github.m-swietek.kmplus\` przeniesione na bok z zanotowanym SHA-256 `kmplus.vault`; `npm run tauri dev` na pustym katalogu; scenariusz bazowy z S-03 wpisany: start 2026-01-01, 100 000 km; A gaz dolewka 2026-01-03, 100 200 km, 20 l, 60 zł; B gaz pełny 2026-01-05, 100 400 km, 20 l, 60 zł; C benzyna pełny 2026-01-06, 100 500 km, 5 l, 32,50 zł; D gaz pełny 2026-01-10, 100 900 km, 45 l, 135 zł — karta Gaz 9,00 l/100 km, średnio 9,44 l/100 km na 900 km — 9509d98
+- [x] 3.4 „Edytuj” przy B wypełnia formularz (Gaz, 2026-01-05, 100400, 20,00, 60,00, do pełna) z nagłówkiem „Popraw tankowanie”; „Anuluj” wraca do „Dodaj tankowanie” bez zmian w danych; „Zapisz zmiany” bez zmian pól jest przyjęte, panel „Poprawiono: Gaz, 05.01.2026” z 10,00 l/100 km na 400 km — 9509d98
+- [x] 3.5 Poprawka B na 30 l: wiersz B 12,50 l/100 km na 400 km, koszt okresu 120,00 zł, cena 2,00 zł/l; karta Gaz 9,00 l/100 km, średnio 10,56 l/100 km na 900 km — 9509d98
+- [x] 3.6 Poprawka A z gazu na benzynę: A przechodzi do listy Benzyna; karta Benzyna 5,00 l/100 km, średnio 5,00 l/100 km na 500 km (wiersz C: koszt okresu 92,50 zł); karta Gaz 9,00 l/100 km, średnio 8,33 l/100 km na 900 km (wiersz B: 7,50 l/100 km, koszt okresu 60,00 zł) — 9509d98
+- [x] 3.7 Poprawka C z przebiegiem 100 950 km jest odrzucona komunikatem „Wpis koliduje z tankowaniem z 10.01.2026 przy 100 900 km (przebieg i data muszą rosnąć razem).”, formularz zostaje w trybie edycji, dane bez zmian — 9509d98
+- [x] 3.8 „Usuń” przy B pokazuje „Usunąć tankowanie z 05.01.2026, 100 400 km?”; „Anuluj” zostawia wiersz; potwierdzone usunięcie: karta Gaz 5,00 l/100 km, średnio 5,00 l/100 km na 900 km, wiersz D koszt okresu 135,00 zł, panel „Usunięto: Gaz, 05.01.2026, 100 400 km” — 9509d98
+- [x] 3.9 „Edytuj” przy D, potem potwierdzone „Usuń” przy D: formularz wraca do trybu dodawania, karta Gaz „Brak wpisów”, lista Gaz „Brak tankowań”, panel „Usunięto: Gaz, 10.01.2026, 100 900 km” — 9509d98
+- [x] 3.10 Po restarcie i odblokowaniu widok identyczny; tryb ciemny i wąskie okno czytelne; po teście prawdziwe pliki przywrócone, SHA-256 `kmplus.vault` równy zanotowanemu przed testem — 9509d98
 
 ### Phase 4: Wydanie 0.1.7
 
