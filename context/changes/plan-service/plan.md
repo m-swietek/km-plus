@@ -371,36 +371,36 @@ Rejestr jednego auta to kilkanaście wpisów; sortowanie przy każdym odczycie b
 
 #### Automated
 
-- [x] 1.1 Testy domeny serwisu przechodzą: `cargo test service::tests` w `src-tauri/` — c475eca
-- [x] 1.2 Testy sejfu (migracja v2 → v3, kopia `pre-v3`, brakujące pola) przechodzą: `cargo test vault::tests` w `src-tauri/` — c475eca
-- [x] 1.3 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/` — c475eca
-- [x] 1.4 Brak ostrzeżeń kompilacji (w tym martwego kodu): `cargo check` w `src-tauri/` — c475eca
+- [x] 1.1 Testy domeny serwisu przechodzą: `cargo test service::tests` w `src-tauri/` — 6a6aec0
+- [x] 1.2 Testy sejfu (migracja v2 → v3, kopia `pre-v3`, brakujące pola) przechodzą: `cargo test vault::tests` w `src-tauri/` — 6a6aec0
+- [x] 1.3 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/` — 6a6aec0
+- [x] 1.4 Brak ostrzeżeń kompilacji (w tym martwego kodu): `cargo check` w `src-tauri/` — 6a6aec0
 
 ### Phase 2: Komendy i kontrakt serwisów
 
 #### Automated
 
-- [x] 2.1 Testy komend i kształtu JSON przechodzą: `cargo test service::commands` w `src-tauri/` — 40b52e2
-- [x] 2.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/` — 40b52e2
-- [x] 2.3 Brak ostrzeżeń kompilacji: `cargo check` w `src-tauri/` — 40b52e2
-- [x] 2.4 Frontend kompiluje się z nowymi typami: `npm run build` — 40b52e2
+- [x] 2.1 Testy komend i kształtu JSON przechodzą: `cargo test service::commands` w `src-tauri/` — fe32325
+- [x] 2.2 Cały zestaw testów przechodzi: `cargo test` w `src-tauri/` — fe32325
+- [x] 2.3 Brak ostrzeżeń kompilacji: `cargo check` w `src-tauri/` — fe32325
+- [x] 2.4 Frontend kompiluje się z nowymi typami: `npm run build` — fe32325
 
 ### Phase 3: UI rejestru serwisów i zakładki
 
 #### Automated
 
-- [x] 3.1 Frontend kompiluje się bez nieużywanych importów: `npm run build` — b4aedb2
-- [x] 3.2 Testy backendu nadal przechodzą: `cargo test` w `src-tauri/` — b4aedb2
+- [x] 3.1 Frontend kompiluje się bez nieużywanych importów: `npm run build` — 685d2d2
+- [x] 3.2 Testy backendu nadal przechodzą: `cargo test` w `src-tauri/` — 685d2d2
 
 #### Manual
 
-- [x] 3.3 `npm run tauri dev` na czystym katalogu danych (prawdziwy `kmplus.vault` i pliki obok przeniesione na bok przed testem i przywrócone po nim, z porównaniem SHA-256): po haśle i punkcie startowym (2026-01-01, 100 000 km) widać zakładkę „Paliwo” jak dotąd; „Serwisy” pokazuje „Brak zaplanowanych serwisów” — a17de95
-- [x] 3.4 Dodanie „Przegląd techniczny” (termin 2027-03-01), „Wymiana oleju” (115 000 km, cykliczny co 15 000 km, notatka „5W-30”), „Rozrząd” (180 000 km i 2028-06-01, cykliczny co 90 000 km i co 48 mies.) oraz „Płyn hamulcowy” (termin 2026-10-01, w przeszłości — zapisany bez ostrzeżenia): kolejność listy Płyn hamulcowy, Przegląd techniczny, Rozrząd, Wymiana oleju; progi, cykliczność i notatka widoczne — a17de95
-- [x] 3.5 Zapis bez progu → „Podaj próg przebiegu, termin albo oba.”; cykliczny z terminem bez liczby miesięcy → komunikat o interwale; dane formularza zostają — a17de95
-- [x] 3.6 „Edytuj” na „Wymiana oleju”: próg 116 000 km, odznaczony „Cykliczny” → wiersz bez cykliczności, ten sam wpis (nie nowy); „Anuluj” w edycji nie zmienia wpisu — a17de95
-- [x] 3.7 „Usuń” przy „Płyn hamulcowy” pokazuje „Usunąć serwis „Płyn hamulcowy”?”; „Anuluj” zostawia wpis; potwierdzające „Usuń” usuwa „Płyn hamulcowy” — a17de95
-- [x] 3.8 Przełączanie zakładek nie kasuje wpisanych pól formularza tankowania ani serwisu; dodanie tankowania nadal działa — a17de95
-- [x] 3.9 Po restarcie i odblokowaniu rejestr identyczny; tryb ciemny i wąskie okno czytelne — a17de95
+- [x] 3.3 `npm run tauri dev` na czystym katalogu danych (prawdziwy `kmplus.vault` i pliki obok przeniesione na bok przed testem i przywrócone po nim, z porównaniem SHA-256): po haśle i punkcie startowym (2026-01-01, 100 000 km) widać zakładkę „Paliwo” jak dotąd; „Serwisy” pokazuje „Brak zaplanowanych serwisów” — a614f07
+- [x] 3.4 Dodanie „Przegląd techniczny” (termin 2027-03-01), „Wymiana oleju” (115 000 km, cykliczny co 15 000 km, notatka „5W-30”), „Rozrząd” (180 000 km i 2028-06-01, cykliczny co 90 000 km i co 48 mies.) oraz „Płyn hamulcowy” (termin 2026-10-01, w przeszłości — zapisany bez ostrzeżenia): kolejność listy Płyn hamulcowy, Przegląd techniczny, Rozrząd, Wymiana oleju; progi, cykliczność i notatka widoczne — a614f07
+- [x] 3.5 Zapis bez progu → „Podaj próg przebiegu, termin albo oba.”; cykliczny z terminem bez liczby miesięcy → komunikat o interwale; dane formularza zostają — a614f07
+- [x] 3.6 „Edytuj” na „Wymiana oleju”: próg 116 000 km, odznaczony „Cykliczny” → wiersz bez cykliczności, ten sam wpis (nie nowy); „Anuluj” w edycji nie zmienia wpisu — a614f07
+- [x] 3.7 „Usuń” przy „Płyn hamulcowy” pokazuje „Usunąć serwis „Płyn hamulcowy”?”; „Anuluj” zostawia wpis; potwierdzające „Usuń” usuwa „Płyn hamulcowy” — a614f07
+- [x] 3.8 Przełączanie zakładek nie kasuje wpisanych pól formularza tankowania ani serwisu; dodanie tankowania nadal działa — a614f07
+- [x] 3.9 Po restarcie i odblokowaniu rejestr identyczny; tryb ciemny i wąskie okno czytelne — a614f07
 
 ### Phase 4: Wydanie i dowód migracji v2 → v3
 
