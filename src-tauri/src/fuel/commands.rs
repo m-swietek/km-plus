@@ -1207,4 +1207,26 @@ mod tests {
         assert_eq!(vault.data.next_fill_up_id, 4);
         assert_eq!(reopen(dir.path()).data, vault.data);
     }
+
+    /// Deleting the highest id must not free it: ids come from `next_fill_up_id`, not from the
+    /// largest id still in the list (which would hand id 2 out again here).
+    #[test]
+    fn deleting_the_highest_id_does_not_free_it() {
+        let dir = TempDir::new().unwrap();
+        let mut vault = vault_with_two_lpg_entries(dir.path());
+
+        assert_eq!(
+            apply_delete(&mut vault, 2).unwrap(),
+            DeleteFillUpResult::Deleted
+        );
+        let ids: Vec<u64> = vault.data.fill_ups.iter().map(|f| f.id).collect();
+        assert_eq!(ids, vec![1]);
+        assert_eq!(vault.data.next_fill_up_id, 3);
+
+        apply_fill_up(&mut vault, lpg("2026-01-05", 100_400, true)).unwrap();
+        let ids: Vec<u64> = vault.data.fill_ups.iter().map(|f| f.id).collect();
+        assert_eq!(ids, vec![1, 3]);
+        assert_eq!(vault.data.next_fill_up_id, 4);
+        assert_eq!(reopen(dir.path()).data, vault.data);
+    }
 }

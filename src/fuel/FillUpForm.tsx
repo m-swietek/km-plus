@@ -21,7 +21,7 @@ import {
   parseKm,
   todayIso,
 } from "./format";
-import { NOT_FOUND_MESSAGE, type Editing, type Notice } from "./useFillUpEditing";
+import { NOT_FOUND_MESSAGE, type Editing, type Notice, type Requests } from "./useFillUpEditing";
 
 type Props = {
   startPoint: StartPointView;
@@ -36,9 +36,11 @@ type Props = {
   onCancelEditing: () => void;
   onClearNotice: () => void;
   onAdded: (fuel: Fuel, date: string, result: FillUpResult) => void;
-  onUpdated: (fuel: Fuel, date: string, result: FillUpResult) => void;
+  onUpdated: (id: number, fuel: Fuel, date: string, result: FillUpResult) => void;
   /** The corrected entry no longer exists in the backend. */
   onGone: (id: number) => void;
+  /** Writes in flight on the whole screen; the save goes through `track` and waits for the others. */
+  requests: Requests;
 };
 
 function rejectionMessage(reason: FillUpRejection, start: StartPointView): string {
@@ -77,6 +79,7 @@ export function FillUpForm({
   onAdded,
   onUpdated,
   onGone,
+  requests,
 }: Props) {
   const [fuel, setFuel] = useState<Fuel>("lpg");
   const [date, setDate] = useState(todayIso);
@@ -118,7 +121,12 @@ export function FillUpForm({
   const litresCl = parseDecimal2(litres);
   const amountGrosze = parseDecimal2(amount);
   const canSubmit =
-    !busy && isIsoDate(date) && odometerKm !== null && litresCl !== null && amountGrosze !== null;
+    !busy &&
+    !requests.inFlight &&
+    isIsoDate(date) &&
+    odometerKm !== null &&
+    litresCl !== null &&
+    amountGrosze !== null;
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -138,11 +146,11 @@ export function FillUpForm({
     setError("");
     try {
       if (editing) {
-        const result = await updateFillUp(editing.row.id, input);
+        const result = await requests.track(updateFillUp(editing.row.id, input));
         switch (result.kind) {
           case "saved":
             // Ending the edit reloads the fields into the add mode.
-            onUpdated(fuel, date, result.result);
+            onUpdated(editing.row.id, fuel, date, result.result);
             onSaved();
             break;
           case "notFound":
@@ -159,7 +167,7 @@ export function FillUpForm({
             return;
         }
       } else {
-        const result = await addFillUp(input);
+        const result = await requests.track(addFillUp(input));
         switch (result.kind) {
           case "saved":
             onAdded(fuel, date, result.result);

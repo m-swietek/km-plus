@@ -2,6 +2,7 @@ import { useState } from "react";
 import { errorMessage } from "../vault/api";
 import { FUEL_LABELS, deleteFillUp, type Fuel, type HistoryRow } from "./api";
 import { formatConsumption, formatDate, formatKm, formatLitres, formatMoney, formatPricePerLitre } from "./format";
+import type { Requests } from "./useFillUpEditing";
 
 type Props = {
   fuel: Fuel;
@@ -19,6 +20,8 @@ type Props = {
   onGone: (id: number) => void;
   /** Data changed (or turned out stale); the shell refreshes the fuel cards and histories. */
   onChanged: () => void;
+  /** Writes in flight on the whole screen; while set, every row action is disabled. */
+  requests: Requests;
 };
 
 /**
@@ -36,8 +39,10 @@ export function FillUpHistory({
   onDeleted,
   onGone,
   onChanged,
+  requests,
 }: Props) {
-  const [busy, setBusy] = useState(false);
+  // Shared with the form and the other list, so no action starts while any write is in flight.
+  const busy = requests.inFlight;
   const [error, setError] = useState("");
 
   function startConfirming(id: number) {
@@ -47,10 +52,9 @@ export function FillUpHistory({
 
   async function confirmDelete(row: HistoryRow) {
     if (busy) return;
-    setBusy(true);
     setError("");
     try {
-      const result = await deleteFillUp(row.id);
+      const result = await requests.track(deleteFillUp(row.id));
       switch (result.kind) {
         case "deleted":
           onDeleted(fuel, row);
@@ -64,7 +68,6 @@ export function FillUpHistory({
     } catch (err) {
       setError(errorMessage(err));
     }
-    setBusy(false);
   }
 
   return (

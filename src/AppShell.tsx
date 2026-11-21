@@ -75,7 +75,7 @@ export function AppShell() {
             <FuelCard fuel="lpg" view={overview.lpg} />
             <FuelCard fuel="petrol" view={overview.petrol} />
           </div>
-          {/* Refreshing in place keeps the form mounted, so its fuel, date and result survive. */}
+          {/* Refreshing in place keeps the form mounted, so its fuel and date survive; the last-action notice lives in useFillUpEditing. */}
           <FillUpForm
             startPoint={overview.startPoint}
             onSaved={fetchOverview}
@@ -87,6 +87,7 @@ export function AppShell() {
             onAdded={fillUpEditing.reportAdded}
             onUpdated={fillUpEditing.reportUpdated}
             onGone={fillUpEditing.reportGone}
+            requests={fillUpEditing.requests}
           />
           {/* Same overview state as the cards, so `fetchOverview` after a save refreshes both. */}
           <div className="fuel-histories">
@@ -101,6 +102,7 @@ export function AppShell() {
               onDeleted={fillUpEditing.reportDeleted}
               onGone={fillUpEditing.reportGone}
               onChanged={fetchOverview}
+              requests={fillUpEditing.requests}
             />
             <FillUpHistory
               fuel="petrol"
@@ -113,6 +115,7 @@ export function AppShell() {
               onDeleted={fillUpEditing.reportDeleted}
               onGone={fillUpEditing.reportGone}
               onChanged={fetchOverview}
+              requests={fillUpEditing.requests}
             />
           </div>
         </section>
